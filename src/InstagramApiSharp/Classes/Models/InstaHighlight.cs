@@ -1,4 +1,13 @@
-﻿using System.Collections.Generic;
+﻿/*
+ * Developer: Ramtin Jokar [ Ramtinak@live.com ] [ My Telegram Account: https://t.me/ramtinak ]
+ * 
+ * Github source: https://github.com/ramtinak/InstagramApiSharp
+ * Nuget package: https://www.nuget.org/packages/InstagramApiSharp
+ * 
+ * IRANIAN DEVELOPERS
+ */
+
+using System.Collections.Generic;
 
 namespace InstagramApiSharp.Classes.Models
 {
@@ -6,7 +15,7 @@ namespace InstagramApiSharp.Classes.Models
     {
         public bool ShowEmptyState { get; set; }
 
-        public string Status { get; set; }
+        internal string Status { get; set; }
 
         public List<InstaHighlightFeed> Items { get; set; } = new List<InstaHighlightFeed>();
     }

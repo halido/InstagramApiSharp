@@ -2,13 +2,16 @@
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Classes.Models.Business;
+using InstagramApiSharp.Classes.Models.Hashtags;
 using InstagramApiSharp.Classes.ResponseWrappers;
 using InstagramApiSharp.Classes.ResponseWrappers.Business;
 using InstagramApiSharp.Converters.Business;
+using InstagramApiSharp.Converters.Hashtags;
+using InstagramApiSharp.Converters.Users;
 
 namespace InstagramApiSharp.Converters
 {
-    internal class ConvertersFabric : IConvertersFabric
+    internal class ConvertersFabric
     {
         private static readonly Lazy<ConvertersFabric> LazyInstance =
             new Lazy<ConvertersFabric>(() => new ConvertersFabric());
@@ -305,6 +308,18 @@ InstaHighlightReelResponse response)
             return new InstaSuggestionItemConverter { SourceObject = response };
         }
 
+        public IObjectConverter<InstaSuggestionItemList, InstaSuggestionItemListResponse> GetSuggestionItemListConverter(
+            InstaSuggestionItemListResponse response)
+        {
+            return new InstaSuggestionItemListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaSuggestions, InstaSuggestionUserContainerResponse> GetSuggestionsConverter(
+            InstaSuggestionUserContainerResponse response)
+        {
+            return new InstaSuggestionsConverter { SourceObject = response };
+        }
+
         public IObjectConverter<InstaStatistics, InstaStatisticsRootResponse> GetStatisticsConverter(
             InstaStatisticsRootResponse response)
         {
@@ -339,6 +354,102 @@ InstaHighlightReelResponse response)
             InstaBusinessUserContainerResponse response)
         {
             return new InstaBusinessUserConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaHashtagOwner, InstaHashtagOwnerResponse> GetHashtagOwnerConverter(
+            InstaHashtagOwnerResponse response)
+        {
+            return new InstaHashtagOwnerConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaHashtagStory, InstaHashtagStoryContainerResponse> GetHashtagStoryConverter(
+            InstaHashtagStoryContainerResponse response)
+        {
+            return new InstaHashtagStoryConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaHashtagMedia, InstaHashtagMediaListResponse> GetHashtagMediaListConverter(
+            InstaHashtagMediaListResponse response)
+        {
+            return new InstaHashtagMediaConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserContact, InstaUserContactResponse> GetSingleUserContactConverter(
+            InstaUserContactResponse response)
+        {
+            return new InstaUserContactConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaContactUserList, InstaContactUserListResponse> GetUserContactListConverter(
+            InstaContactUserListResponse response)
+        {
+            return new InstaUserContactListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserPresence, InstaUserPresenceResponse> GetSingleUserPresenceConverter(
+            InstaUserPresenceResponse response)
+        {
+            return new InstaSingleUserPresenceConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserPresenceList, InstaUserPresenceContainerResponse> GetUserPresenceListConverter(
+            InstaUserPresenceContainerResponse response)
+        {
+            return new InstaUserPresenceListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDiscoverSearches, InstaDiscoverSearchesResponse> GetDiscoverSearchesConverter(
+            InstaDiscoverSearchesResponse response)
+        {
+            return new InstaDiscoverSearchesConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDiscoverRecentSearches, InstaDiscoverRecentSearchesResponse> GetDiscoverRecentSearchesConverter(
+            InstaDiscoverRecentSearchesResponse response)
+        {
+            return new InstaDiscoverRecentSearchesConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDiscoverSuggestedSearches, InstaDiscoverSuggestedSearchesResponse> GetDiscoverSuggestedSearchesConverter(
+            InstaDiscoverSuggestedSearchesResponse response)
+        {
+            return new InstaDiscoverSuggestedSearchesConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDiscoverSearchResult, InstaDiscoverSearchResultResponse> GetDiscoverSearchResultConverter(
+            InstaDiscoverSearchResultResponse response)
+        {
+            return new InstaDiscoverSearchResultConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaFriendshipShortStatusList, InstaFriendshipShortStatusListResponse> GetFriendshipShortStatusListConverter(
+            InstaFriendshipShortStatusListResponse response)
+        {
+            return new InstaFriendshipShortStatusListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserChaining, InstaUserChainingResponse> GetSingleUserChainingConverter(
+            InstaUserChainingResponse response)
+        {
+            return new InstaUserChainingConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserChainingList, InstaUserChainingContainerResponse> GetUserChainingListConverter(
+            InstaUserChainingContainerResponse response)
+        {
+            return new InstaUserChainingListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaHighlightShort, InstaHighlightShortResponse> GetSingleHighlightShortConverter(
+            InstaHighlightShortResponse response)
+        {
+            return new InstaHighlightShortConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaHighlightShortList, InstaHighlightShortListResponse> GetHighlightShortListConverter(
+            InstaHighlightShortListResponse response)
+        {
+            return new InstaHighlightShortListConverter { SourceObject = response };
         }
     }
 }

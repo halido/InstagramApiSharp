@@ -1,5 +1,15 @@
-﻿using System.Collections.Generic;
+﻿/*
+ * Developer: Ramtin Jokar [ Ramtinak@live.com ] [ My Telegram Account: https://t.me/ramtinak ]
+ * 
+ * Github source: https://github.com/ramtinak/InstagramApiSharp
+ * Nuget package: https://www.nuget.org/packages/InstagramApiSharp
+ * 
+ * IRANIAN DEVELOPERS
+ */
+
+using System.Collections.Generic;
 using Newtonsoft.Json;
+using InstagramApiSharp.Classes.Models;
 namespace InstagramApiSharp.Classes.ResponseWrappers
 {
     public class InstaHighlightFeedsResponse
@@ -11,11 +21,12 @@ namespace InstagramApiSharp.Classes.ResponseWrappers
         [JsonProperty("tray")]
         public List<InstaHighlightFeedResponse> Items { get; set; } = new List<InstaHighlightFeedResponse>();
     }
-    public class InstaHighlightReelResponse
+    public class InstaHighlightReelResponse : InstaDefault
     {
-        [JsonProperty("reel")]
+        [JsonIgnore]
         public InstaHighlightSingleFeedResponse Reel { get; set; }
     }
+
     public class InstaHighlightSingleFeedResponse : InstaHighlightFeedResponse
     {
         [JsonProperty("items")]

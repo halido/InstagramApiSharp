@@ -19,7 +19,8 @@ namespace InstagramApiSharp.Converters
                 IsPrivate = SourceObject.IsPrivate,
                 ProfilePicture = SourceObject.ProfilePicture,
                 ProfilePictureId = SourceObject.ProfilePictureId,
-                IsVerified = SourceObject.IsVerified
+                IsVerified = SourceObject.IsVerified,
+                ProfilePicUrl = SourceObject.ProfilePicture
             };
             return user;
         }

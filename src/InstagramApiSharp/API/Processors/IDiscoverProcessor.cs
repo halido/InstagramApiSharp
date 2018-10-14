@@ -7,50 +7,64 @@
  * IRANIAN DEVELOPERS
  */
 using InstagramApiSharp.Classes;
+using InstagramApiSharp.Classes.Models;
+using InstagramApiSharp.Classes.ResponseWrappers;
+using InstagramApiSharp.Enums;
 using System.Threading.Tasks;
 
 namespace InstagramApiSharp.API.Processors
 {
-    public enum DiscoverSearchType
-    {
-        //'blended', 'users', 'hashtags', 'places'
-        Blended,
-        Users,
-        Hashtags,
-        Places
-    }
+    /// <summary>
+    ///     Discover api functions.
+    /// </summary>
     public interface IDiscoverProcessor
     {
         /// <summary>
-        /// Get recent searches
+        ///     Clear Recent searches
         /// </summary>
-        /// <returns></returns>
-        Task<IResult<InstaDiscoverRecentSearchesResponse>> GetRecentSearchsAsync();
-        /// <summary>
-        /// Clear Recent searches
-        /// </summary>
-        /// <returns></returns>
         Task<IResult<bool>> ClearRecentSearchsAsync();
+
         /// <summary>
-        /// Get suggested searches
+        ///     Get discover user chaining list 
+        /// </summary>
+        Task<IResult<InstaUserChainingList>> GetChainingUsersAsync();
+
+        /// <summary>
+        ///     Get recent searches
+        /// </summary>
+        Task<IResult<InstaDiscoverRecentSearches>> GetRecentSearchesAsync();
+        /// <summary>
+        ///     Get suggested searches
         /// </summary>
         /// <param name="searchType">Search type(only blended and users works)</param>
-        /// <returns></returns>
-        Task<IResult<InstaDiscoverSuggestionResponse>> GetSuggestedSearchesAsync(DiscoverSearchType searchType);
+        Task<IResult<InstaDiscoverSuggestedSearches>> GetSuggestedSearchesAsync(InstaDiscoverSearchType searchType = 
+            InstaDiscoverSearchType.Users);
         /// <summary>
-        /// Search user people
+        ///     Search user people
         /// </summary>
-        /// <param name="text">Text to search</param>
+        /// <param name="query">Query to search</param>
         /// <param name="count">Count</param>
-        /// <returns></returns>
-        Task<IResult<DiscoverSearchResponse>> SearchPeopleAsync(string content, int count = 30);
+        Task<IResult<InstaDiscoverSearchResult>> SearchPeopleAsync(string query, int count = 50);
+        #region Other functions
 
+        /// <summary>
+        ///     Sync your phone contact list to instagram
+        ///     <para>Note:You can find your friends in instagram with this function</para>
+        /// </summary>
+        /// <param name="instaContacts">Contact list</param>
+        Task<IResult<InstaContactUserList>> SyncContactsAsync(params InstaContact[] instaContacts);
+        /// <summary>
+        ///     Sync your phone contact list to instagram
+        ///     <para>Note:You can find your friends in instagram with this function</para>
+        /// </summary>
+        /// <param name="instaContacts">Contact list</param>
+        Task<IResult<InstaContactUserList>> SyncContactsAsync(InstaContactList instaContacts);
 
+        #endregion Other functions
 
         ///// <summary>
         ///// NOT COMPLETE
         ///// </summary>
-        ///// <returns></returns>
         //Task<IResult<object>> DiscoverPeopleAsync();
 
     }

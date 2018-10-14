@@ -20,19 +20,51 @@ using Newtonsoft.Json.Linq;
 
 namespace InstagramApiSharp.API
 {
+    /// <summary>
+    ///     Base of everything that you want.
+    /// </summary>
     internal class InstaApi : IInstaApi
     {
+        #region Variables and properties
+
         private IRequestDelay _delay = RequestDelay.Empty();
         private readonly IHttpRequestProcessor _httpRequestProcessor;
         private readonly IInstaLogger _logger;
         private InstaApiVersionType _apiVersionType;
         private InstaApiVersion _apiVersion;
         private HttpHelper _httpHelper;
+        private AndroidDevice _deviceInfo;
+        private InstaTwoFactorLoginInfo _twoFactorInfo;
+        private InstaChallengeLoginInfo _challengeinfo;
+        private UserSessionData _userSession;
+        private UserSessionData _user
+        {
+            get { return _userSession; }
+            set { _userSession = value; _userAuthValidate.User = value; }
+        }
+        private UserAuthValidate _userAuthValidate;
+        bool IsCustomDeviceSet = false;
+
+        string _waterfallIdReg = "", _deviceIdReg = "", _phoneIdReg = "", _guidReg = "";
+        InstaAccountRegistrationPhoneNumber _signUpPhoneNumberInfo;
+
+        private bool _isUserAuthenticated;
+        /// <summary>
+        ///     Indicates whether user authenticated or not
+        /// </summary>
+        public bool IsUserAuthenticated
+        {
+            get { return _isUserAuthenticated; }
+            internal set { _isUserAuthenticated = value; _userAuthValidate.IsUserAuthenticated = value; }
+        }
+
+        #endregion Variables and properties
+
+        #region Processors
+
         private ICollectionProcessor _collectionProcessor;
         private ICommentProcessor _commentProcessor;
-        private AndroidDevice _deviceInfo;
         private IFeedProcessor _feedProcessor;
-
         private IHashtagProcessor _hashtagProcessor;
         private ILocationProcessor _locationProcessor;
         private IMediaProcessor _mediaProcessor;
@@ -45,17 +77,6 @@ namespace InstagramApiSharp.API
         ITVProcessor _tvProcessor;
         HelperProcessor _helperProcessor;
         IBusinessProcessor _businessProcessor;
-
-        private InstaTwoFactorLoginInfo _twoFactorInfo;
-        private InstaChallengeLoginInfo _challengeinfo;
-        private UserSessionData _userSession;
-        private UserSessionData _user
-        {
-            get { return _userSession; }
-            set { _userSession = value; _userAuthValidate.User = value; }
-        }
-        private UserAuthValidate _userAuthValidate;
-
         /// <summary>
         ///     Live api functions.
         /// </summary>
@@ -118,6 +139,10 @@ namespace InstagramApiSharp.API
         /// </summary>
         public IBusinessProcessor BusinessProcessor => _businessProcessor;
 
+        #endregion Processors
+
+        #region Constructor
+
         public InstaApi(UserSessionData user, IInstaLogger logger, AndroidDevice deviceInfo,
             IHttpRequestProcessor httpRequestProcessor, InstaApiVersionType apiVersionType)
         {
@@ -130,74 +155,11 @@ namespace InstagramApiSharp.API
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);
         }
+        
+        #endregion Constructor
 
-        bool IsCustomDeviceSet = false;
-        /// <summary>
-        ///     Set custom android device.
-        ///     <para>Note 1: If you want to use this method, you should call it before you calling <seealso cref="IInstaApi.LoadStateDataFromStream(Stream)"/> or <seealso cref="IInstaApi.LoadStateDataFromString(string)"/></para>
-        ///     <para>Note 2: this is optional, if you didn't set this, InstagramApiSharp will choose random device.</para>
-        /// </summary>
-        /// <param name="device">Android device</param>
-        public void SetDevice(AndroidDevice device)
-        {
-            IsCustomDeviceSet = false;
-            if (device == null)
-                return;
-            _deviceInfo = device;
-            IsCustomDeviceSet = true;
-        }
-        /// <summary>
-        ///     Gets current device
-        /// </summary>
-        public AndroidDevice GetCurrentDevice()
-        {
-            return _deviceInfo;
-        }
-        /// <summary>
-        ///     Gets logged in user
-        /// </summary>
-        public UserSessionData GetLoggedUser()
-        {
-            return _user;
-        }
-        /// <summary>
-        ///     Get currently logged in user info asynchronously
-        /// </summary>
-        /// <returns>
-        ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaCurrentUser" />
-        /// </returns>
-        public async Task<IResult<InstaCurrentUser>> GetCurrentUserAsync()
-        {
-            ValidateUser();
-            ValidateLoggedIn();
-            return await _userProcessor.GetCurrentUserAsync();
-        }
-
-        /// <summary>
-        ///     Set delay between requests. Useful when API supposed to be used for mass-bombing.
-        /// </summary>
-        /// <param name="delay">Timespan delay</param>
-        public void SetRequestDelay(IRequestDelay delay)
-        {
-            if (delay == null)
-                delay = RequestDelay.Empty();
-            _delay = delay;
-            _httpRequestProcessor.Delay = _delay;
-            
-        }
-        #region Authentication/State data
-        private bool _isUserAuthenticated;
-        /// <summary>
-        ///     Indicates whether user authenticated or not
-        /// </summary>
-        public bool IsUserAuthenticated
-        {
-            get { return _isUserAuthenticated; }
-            internal set { _isUserAuthenticated = value; _userAuthValidate.IsUserAuthenticated = value; }
-        }
         #region Register new account with Phone number and email
-        string _waterfallIdReg = "", _deviceIdReg = "", _phoneIdReg = "", _guidReg = "";
-        InstaAccountRegistrationPhoneNumber _signUpPhoneNumberInfo;
+
         /// <summary>
         ///     Check email availability
         /// </summary>
@@ -308,7 +270,7 @@ namespace InstagramApiSharp.API
         ///     Check username availablity. 
         /// </summary>
         /// <param name="username">Username</param>
-        public async Task<IResult<InstaAccountCheckResponse>> CheckUsernameAsync(string username)
+        public async Task<IResult<InstaAccountCheck>> CheckUsernameAsync(string username)
         {
             try
             {
@@ -321,13 +283,13 @@ namespace InstagramApiSharp.API
                 var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
-                var obj = JsonConvert.DeserializeObject<InstaAccountCheckResponse>(json);
+                var obj = JsonConvert.DeserializeObject<InstaAccountCheck>(json);
                 return Result.Success(obj);
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaAccountCheckResponse>(exception);
+                return Result.Fail<InstaAccountCheck>(exception);
             }
         }
         /// <summary>
@@ -855,7 +817,10 @@ namespace InstagramApiSharp.API
                 return Result.Fail(ex, false);
             }
         }
-        #endregion
+        #endregion Register new account with Phone number and email
+
+        #region Authentication and challenge functions
+
         /// <summary>
         ///     Login using given credentials asynchronously
         /// </summary>
@@ -1048,6 +1013,34 @@ namespace InstagramApiSharp.API
                     : Result.Fail<InstaTwoFactorLoginInfo>("No Two Factor info available."));
         }
 
+        /// <summary>
+        ///     Logout from instagram asynchronously
+        /// </summary>
+        /// <returns>
+        ///     True if logged out without errors
+        /// </returns>
+        public async Task<IResult<bool>> LogoutAsync()
+        {
+            ValidateUser();
+            ValidateLoggedIn();
+            try
+            {
+                var instaUri = UriCreator.GetLogoutUri();
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK) return Result.UnExpectedResponse<bool>(response, json);
+                var logoutInfo = JsonConvert.DeserializeObject<BaseStatusResponse>(json);
+                if (logoutInfo.Status == "ok")
+                    IsUserAuthenticated = false;
+                return Result.Success(!IsUserAuthenticated);
+            }
+            catch (Exception exception)
+            {
+                LogException(exception);
+                return Result.Fail(exception, false);
+            }
+        }
 
         /// <summary>
         ///     Send recovery code by Username
@@ -1169,12 +1162,12 @@ namespace InstagramApiSharp.API
         /// <summary>
         ///    Send Two Factor Login SMS Again
         /// </summary>
-        public async Task<IResult<TwoFactorLoginSMSResponse>> SendTwoFactorLoginSMSAsync()
+        public async Task<IResult<TwoFactorLoginSMS>> SendTwoFactorLoginSMSAsync()
         {
             try
             {
                 if (_twoFactorInfo == null)
-                    return Result.Fail<TwoFactorLoginSMSResponse>("Run LoginAsync first");
+                    return Result.Fail<TwoFactorLoginSMS>("Run LoginAsync first");
 
                 var postData = new Dictionary<string, string>
                 {
@@ -1190,7 +1183,7 @@ namespace InstagramApiSharp.API
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var result = await response.Content.ReadAsStringAsync();
 
-                var T = JsonConvert.DeserializeObject<TwoFactorLoginSMSResponse>(result);
+                var T = JsonConvert.DeserializeObject<TwoFactorLoginSMS>(result);
                 if (!string.IsNullOrEmpty(T.TwoFactorInfo.TwoFactorIdentifier))
                     _twoFactorInfo.TwoFactorIdentifier = T.TwoFactorInfo.TwoFactorIdentifier;
                 return Result.Success(T);
@@ -1198,74 +1191,10 @@ namespace InstagramApiSharp.API
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<TwoFactorLoginSMSResponse>(exception);
+                return Result.Fail<TwoFactorLoginSMS>(exception);
             }
         }
-
-        /// <summary>
-        ///     Set Accept Language
-        /// </summary>
-        /// <param name="languageCodeAndCountryCode">Language Code and Country Code. For example:
-        /// <para>en-US for united states</para>
-        /// <para>fa-IR for IRAN</para>
-        /// </param>
-        public bool SetAcceptLanguage(string languageCodeAndCountryCode)
-        {
-            try
-            {
-                InstaApiConstants.ACCEPT_LANGUAGE = languageCodeAndCountryCode;
-                return true;
-            }
-            catch (Exception exception)
-            {
-                return Result.Fail<bool>(exception).Value;
-            }
-        }
-
-        /// <summary>
-        ///     Get Accept Language
-        /// </summary>
-        public string GetAcceptLanguage()
-        {
-            try
-            {
-                return InstaApiConstants.ACCEPT_LANGUAGE;
-            }
-            catch (Exception exception)
-            {
-                return Result.Fail<string>(exception).Value;
-            }
-        }
-
-        /// <summary>
-        ///     Logout from instagram asynchronously
-        /// </summary>
-        /// <returns>
-        ///     True if logged out without errors
-        /// </returns>
-        public async Task<IResult<bool>> LogoutAsync()
-        {
-            ValidateUser();
-            ValidateLoggedIn();
-            try
-            {
-                var instaUri = UriCreator.GetLogoutUri();
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
-                var response = await _httpRequestProcessor.SendAsync(request);
-                var json = await response.Content.ReadAsStringAsync();
-                if (response.StatusCode != HttpStatusCode.OK) return Result.UnExpectedResponse<bool>(response, json);
-                var logoutInfo = JsonConvert.DeserializeObject<BaseStatusResponse>(json);
-                if (logoutInfo.Status == "ok")
-                    IsUserAuthenticated = false;
-                return Result.Success(!IsUserAuthenticated);
-            }
-            catch (Exception exception)
-            {
-                LogException(exception);
-                return Result.Fail(exception, false);
-            }
-        }
-
+        
         #region Challenge part
         /// <summary>
         ///     Get challenge require (checkpoint required) options
@@ -1521,40 +1450,13 @@ namespace InstagramApiSharp.API
         }
         #endregion Challenge part
 
-        private void ValidateUserAsync(InstaUserShortResponse user, string csrfToken, bool validateExtra = true, string password = null)
-        {
-            try
-            {
-                var converter = ConvertersFabric.Instance.GetUserShortConverter(user);
-                _user.LoggedInUser = converter.Convert();
-                if (password != null)
-                    _user.Password = password;
-                _user.UserName = _user.UserName; 
-                if (validateExtra)
-                {
-                    _user.RankToken = $"{_user.LoggedInUser.Pk}_{_httpRequestProcessor.RequestMessage.PhoneId}";
-                    _user.CsrfToken = csrfToken;
-                    if (string.IsNullOrEmpty(_user.CsrfToken))
-                    {
-                        var cookies =
-                          _httpRequestProcessor.HttpHandler.CookieContainer.GetCookies(_httpRequestProcessor.Client
-                              .BaseAddress);
-                        _user.CsrfToken = cookies[InstaApiConstants.CSRFTOKEN]?.Value ?? string.Empty;
-                    }
-                    IsUserAuthenticated = true;
-                    InvalidateProcessors();
-                }
-
-            }
-            catch { }
-        }
         /// <summary>
         ///     Set cookie and html document to verify login information.
         /// </summary>
         /// <param name="htmlDocument">Html document source</param>
         /// <param name="cookies">Cookies from webview or webbrowser control</param>
         /// <returns>True if logged in, False if not</returns>
-        public async Task<IResult<bool>> SetCookiesAndHtmlForFacebookLoginAsync(string htmlDocument, string cookie, bool facebookLogin = false)
+        public async Task<IResult<bool>> SetCookiesAndHtmlForFacebookLoginAsync(string htmlDocument, string cookie, bool facebookLogin = true)
         {
             if (!string.IsNullOrEmpty(cookie) && !string.IsNullOrEmpty(htmlDocument))
             {
@@ -1582,7 +1484,7 @@ namespace InstagramApiSharp.API
         /// <param name="webBrowserResponse">Web browser response object</param>
         /// <param name="cookies">Cookies from webview or webbrowser control</param>
         /// <returns>True if logged in, False if not</returns>
-        public async Task<IResult<bool>> SetCookiesAndHtmlForFacebookLogin(InstaWebBrowserResponse webBrowserResponse, string cookie, bool facebookLogin = false)
+        public async Task<IResult<bool>> SetCookiesAndHtmlForFacebookLogin(InstaWebBrowserResponse webBrowserResponse, string cookie, bool facebookLogin = true)
         {
             if(webBrowserResponse == null)
                 return Result.Fail("", false);
@@ -1657,7 +1559,208 @@ namespace InstagramApiSharp.API
             return Result.Fail("", false);
         }
 
+        /* NEEDS A LOT OF WORK
+        private async Task<IResult<bool>> SetCookiesAndHtmlForFacebookLogin(InstaFacebookAccountInfo facebookAccount, string cookiesContainer)
+        {
+            if (facebookAccount == null)
+                return Result.Fail("", false);
 
+            if (string.IsNullOrEmpty(facebookAccount.Token) || string.IsNullOrEmpty(facebookAccount.UserId))
+                return Result.Fail("", false);
+            try
+            {
+                //var firstResponse = await _httpRequestProcessor.GetAsync(_httpRequestProcessor.Client.BaseAddress);
+                //await firstResponse.Content.ReadAsStringAsync();
+                //_logger?.LogResponse(firstResponse);
+
+                var cookies =
+                _httpRequestProcessor.HttpHandler.CookieContainer.GetCookies(_httpRequestProcessor.Client
+                    .BaseAddress);
+                var csrftoken = cookies[InstaApiConstants.CSRFTOKEN]?.Value ?? string.Empty;
+                var uri = new Uri(InstaApiConstants.INSTAGRAM_URL);
+
+                cookiesContainer = cookiesContainer.Replace(';', ',');
+                _httpRequestProcessor.HttpHandler.CookieContainer.SetCookies(uri, cookiesContainer);
+                //var user = new InstaUserShort
+                //{
+                //    Pk = long.Parse(webBrowserResponse.Config.Viewer.Id),
+                //    UserName = _user.UserName,
+                //    ProfilePictureId = "unknown",
+                //    FullName = webBrowserResponse.Config.Viewer.FullName,
+                //    ProfilePicture = webBrowserResponse.Config.Viewer.ProfilePicUrl
+                //};
+                //_user.LoggedInUser = user;
+                //_user.CsrfToken = webBrowserResponse.Config.CsrfToken;
+                //_user.RankToken = $"{webBrowserResponse.Config.Viewer.Id}_{_httpRequestProcessor.RequestMessage.PhoneId}";
+
+                //IsUserAuthenticated = true;
+
+                try
+                {
+
+                    //var instaUri = new Uri(string.Format(InstaApiConstants.FACEBOOK_TOKEN1,facebookAccount.Token));
+                    //var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                    //var response = await _httpRequestProcessor.SendAsync(request);
+                    //var json = await response.Content.ReadAsStringAsync();
+
+                    //instaUri = new Uri(string.Format(InstaApiConstants.FACEBOOK_TOKEN_PICTURE));
+                    //request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                    //response = await _httpRequestProcessor.SendAsync(request);
+                    //json = await response.Content.ReadAsStringAsync();
+
+
+
+                    var instaUri = UriCreator.GetFacebookSignUpUri();
+                    //{
+                    //	"dryrun": "true",
+                    //	"phone_id": "422c0750-4362-480f-a6ed-20271d510b4f",
+                    //	"_csrftoken": "ggv0OmlT6Vv3NDJyw3vWfKFyrKTwyG7z",
+                    //	"_uid": "8651542203",
+                    //	"adid": "4aaa31c1-e48c-49b5-9dd7-262b2156a86d",
+                    //	"guid": "6324ecb2-e663-4dc8-a3a1-289c699cc876",
+                    //	"device_id": "android-70d6ba15a3d76520",
+                    //	"_uuid": "6324ecb2-e663-4dc8-a3a1-289c699cc876",
+                    //	"waterfall_id": "6edc16bb-94e4-4768-8684-0023ec9b300e",
+                    //	"fb_access_token": "EAABwzLixnjYBAJk6hbz17jun4WZAC9CSR9rb0Nl4g2fnXu4D4bgYLXBRnNrxgi93DRX5H4yg8HAYlYaTnOEBwcEmdVWD9zkn9uvsoNaEaO40FWqmqQ9heom8XVEZB6gp4G8AYfD0B0lMpY8mOit1FXFVZAqKGH0K5rbt33UlwZDZD"
+                    //}
+                    var data = new JObject
+                            {
+                                {"dryrun", "true"},
+                                {"phone_id", _deviceInfo.DeviceGuid.ToString()},
+                                {"_csrftoken", _user.CsrfToken},
+                                {"adid", Guid.NewGuid().ToString()},
+                                {"guid", Guid.NewGuid().ToString()},
+                                {"device_id", ApiRequestMessage.GenerateDeviceId()},
+                                {"waterfall_id", Guid.NewGuid().ToString()},
+                                {"fb_access_token", InstaApiConstants.FB_ACCESS_TOKEN},
+                            };
+                    var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                    var response = await _httpRequestProcessor.SendAsync(request);
+                    var json = await response.Content.ReadAsStringAsync();
+                    var obj = JsonConvert.DeserializeObject<InstaFacebookLoginResponse>(json);
+                    var loginInfo = JsonConvert.DeserializeObject<InstaLoginResponse>(json);
+                    IsUserAuthenticated = loginInfo.User?.UserName.ToLower() == _user.UserName.ToLower();
+                    var converter = ConvertersFabric.Instance.GetUserShortConverter(loginInfo.User);
+                    _user.LoggedInUser = converter.Convert();
+                    _user.RankToken = $"{_user.LoggedInUser.Pk}_{_httpRequestProcessor.RequestMessage.PhoneId}";
+                    _user.CsrfToken = csrftoken;
+                    _user.FacebookUserId = obj.FbUserId;
+                }
+                catch (Exception)
+                {
+                }
+                InvalidateProcessors();
+
+                return Result.Success(true);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex.Message, false);
+            }
+
+        }
+        */
+
+        #endregion Authentication and challenge functions
+
+        #region Other public functions
+
+        /// <summary>
+        ///     Gets current device
+        /// </summary>
+        public AndroidDevice GetCurrentDevice()
+        {
+            return _deviceInfo;
+        }
+        /// <summary>
+        ///     Gets logged in user
+        /// </summary>
+        public UserSessionData GetLoggedUser()
+        {
+            return _user;
+        }
+        /// <summary>
+        ///     Get currently logged in user info asynchronously
+        /// </summary>
+        /// <returns>
+        ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaCurrentUser" />
+        /// </returns>
+        public async Task<IResult<InstaCurrentUser>> GetCurrentUserAsync()
+        {
+            ValidateUser();
+            ValidateLoggedIn();
+            return await _userProcessor.GetCurrentUserAsync();
+        }
+        /// <summary>
+        ///     Get Accept Language
+        /// </summary>
+        public string GetAcceptLanguage()
+        {
+            try
+            {
+                return InstaApiConstants.ACCEPT_LANGUAGE;
+            }
+            catch (Exception exception)
+            {
+                return Result.Fail<string>(exception).Value;
+            }
+        }
+        /// <summary>
+        ///     Set delay between requests. Useful when API supposed to be used for mass-bombing.
+        /// </summary>
+        /// <param name="delay">Timespan delay</param>
+        public void SetRequestDelay(IRequestDelay delay)
+        {
+            if (delay == null)
+                delay = RequestDelay.Empty();
+            _delay = delay;
+            _httpRequestProcessor.Delay = _delay;
+
+        }
+        /// <summary>
+        ///     Set instagram api version (for user agent version)
+        /// </summary>
+        /// <param name="apiVersion">Api version</param>
+        public void SetApiVersion(InstaApiVersionType apiVersion)
+        {
+            _apiVersionType = apiVersion;
+        }
+        /// <summary>
+        ///     Set custom android device.
+        ///     <para>Note 1: If you want to use this method, you should call it before you calling <seealso cref="IInstaApi.LoadStateDataFromStream(Stream)"/> or <seealso cref="IInstaApi.LoadStateDataFromString(string)"/></para>
+        ///     <para>Note 2: this is optional, if you didn't set this, InstagramApiSharp will choose random device.</para>
+        /// </summary>
+        /// <param name="device">Android device</param>
+        public void SetDevice(AndroidDevice device)
+        {
+            IsCustomDeviceSet = false;
+            if (device == null)
+                return;
+            _deviceInfo = device;
+            IsCustomDeviceSet = true;
+        }
+        /// <summary>
+        ///     Set Accept Language
+        /// </summary>
+        /// <param name="languageCodeAndCountryCode">Language Code and Country Code. For example:
+        /// <para>en-US for united states</para>
+        /// <para>fa-IR for IRAN</para>
+        /// </param>
+        public bool SetAcceptLanguage(string languageCodeAndCountryCode)
+        {
+            try
+            {
+                InstaApiConstants.ACCEPT_LANGUAGE = languageCodeAndCountryCode;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                return Result.Fail<bool>(exception).Value;
+            }
+        }
+        #endregion Other public functions
+
+        #region State data
 
         /// <summary>
         ///     Get current state info as Memory stream
@@ -1832,8 +1935,8 @@ namespace InstagramApiSharp.API
                 Task.Delay(1000);
             });
         }
-        #endregion
 
+        #endregion State data
 
         #region private part
 
@@ -1858,6 +1961,35 @@ namespace InstagramApiSharp.API
 
 
         }
+
+        private void ValidateUserAsync(InstaUserShortResponse user, string csrfToken, bool validateExtra = true, string password = null)
+        {
+            try
+            {
+                var converter = ConvertersFabric.Instance.GetUserShortConverter(user);
+                _user.LoggedInUser = converter.Convert();
+                if (password != null)
+                    _user.Password = password;
+                _user.UserName = _user.UserName;
+                if (validateExtra)
+                {
+                    _user.RankToken = $"{_user.LoggedInUser.Pk}_{_httpRequestProcessor.RequestMessage.PhoneId}";
+                    _user.CsrfToken = csrfToken;
+                    if (string.IsNullOrEmpty(_user.CsrfToken))
+                    {
+                        var cookies =
+                          _httpRequestProcessor.HttpHandler.CookieContainer.GetCookies(_httpRequestProcessor.Client
+                              .BaseAddress);
+                        _user.CsrfToken = cookies[InstaApiConstants.CSRFTOKEN]?.Value ?? string.Empty;
+                    }
+                    IsUserAuthenticated = true;
+                    InvalidateProcessors();
+                }
+
+            }
+            catch { }
+        }
+
         private void ValidateUser()
         {
             if (string.IsNullOrEmpty(_user.UserName) || string.IsNullOrEmpty(_user.Password))
@@ -1881,6 +2013,6 @@ namespace InstagramApiSharp.API
             _logger?.LogException(exception);
         }
 
-#endregion
+        #endregion
     }
 }

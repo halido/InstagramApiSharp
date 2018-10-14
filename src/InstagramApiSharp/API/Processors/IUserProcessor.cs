@@ -1,9 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 
 namespace InstagramApiSharp.API.Processors
 {
+    /// <summary>
+    ///     User api functions.
+    /// </summary>
     public interface IUserProcessor
     {
         /// <summary>
@@ -55,7 +59,14 @@ namespace InstagramApiSharp.API.Processors
         ///     <see cref="InstaFriendshipStatus" />
         /// </returns>
         Task<IResult<InstaFriendshipStatus>> GetFriendshipStatusAsync(long userId);
-
+        /// <summary>
+        ///     Get friendship status for multiple user ids.
+        /// </summary>
+        /// <param name="userIds">List of user identifier (PK)</param>
+        /// <returns>
+        ///     <see cref="InstaFriendshipShortStatusList" />
+        /// </returns>
+        Task<IResult<InstaFriendshipShortStatusList>> GetFriendshipStatusesAsync(params long[] userIds);
         /// <summary>
         ///     Get full user info (user info, feeds, stories, broadcasts)
         /// </summary>
@@ -72,6 +83,18 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="paginationParameters"></param>
         Task<IResult<InstaActivityFeed>> GetRecentActivityFeedAsync(PaginationParameters paginationParameters);
+
+        /// <summary>
+        ///     Get suggestion details
+        /// </summary>
+        /// <param name="userIds">List of user ids (pk)</param>
+        Task<IResult<InstaSuggestionItemList>> GetSuggestionDetailsAsync(params long[] userIds);
+
+        /// <summary>
+        ///     Get suggestion users
+        /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        Task<IResult<InstaSuggestions>> GetSuggestionUsersAsync(PaginationParameters paginationParameters);
 
         /// <summary>
         ///     Get user info by its user name asynchronously
@@ -154,6 +177,12 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="userId">User id (pk)</param>
         Task<IResult<InstaFriendshipStatus>> IgnoreFriendshipRequestAsync(long userId);
+
+        /// <summary>
+        ///     Report user
+        /// </summary>
+        /// <param name="userId">User id (pk)</param>
+        Task<IResult<bool>> ReportUserAsync(long userId);
 
         /// <summary>
         ///     Stop block user

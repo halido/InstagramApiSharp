@@ -1,13 +1,22 @@
-﻿using InstagramApiSharp.API;
+﻿/*
+ * Developer: Ramtin Jokar [ Ramtinak@live.com ] [ My Telegram Account: https://t.me/ramtinak ]
+ * 
+ * Github source: https://github.com/ramtinak/InstagramApiSharp
+ * Nuget package: https://www.nuget.org/packages/InstagramApiSharp
+ * 
+ * IRANIAN DEVELOPERS
+ */
+
+using InstagramApiSharp.API;
 using InstagramApiSharp.Classes;
 using Newtonsoft.Json;
 using System;
-
+using Newtonsoft.Json.Linq;
 namespace InstagramApiSharp.Helpers
 {
     /// <summary>
-    /// Facebook login helper.
-    /// <para>Note: you must clear all caches from all urls in this class.</para>
+    ///     Facebook login helper.
+    ///     <para>Note: you must clear all caches from all urls in this class.</para>
     /// </summary>
     public class FacebookLoginHelper
     {
@@ -22,10 +31,8 @@ namespace InstagramApiSharp.Helpers
         static readonly Uri FacebookTelemetryAddress = new Uri("https://connect.facebook.net/log/fbevents_telemetry/");
         static readonly Uri FacebookArbiterAddress = new Uri("https://staticxx.facebook.com/connect/xd_arbiter/");
         /// <summary>
-        /// Check FacebookLoginExample project to see how it's works.
+        ///     Check FacebookLoginExample project to see how it's works.
         /// </summary>
-        /// <param name="uri"></param>
-        /// <returns></returns>
         public static bool FirstStep(Uri uri)
         {
             return uri.ToString() == InstagramUriAddress.ToString() ||
@@ -35,19 +42,15 @@ namespace InstagramApiSharp.Helpers
                         uri.ToString().StartsWith("https://www.instagram.com/accounts/onetap/");
         }
         /// <summary>
-        /// Check FacebookLoginExample project to see how it's works.
+        ///     Check FacebookLoginExample project to see how it's works.
         /// </summary>
-        /// <param name="innerHtml"></param>
-        /// <returns></returns>
         public static bool SecondStep(string innerHtml)
         {
             return innerHtml.Contains("button") && innerHtml.Contains("_5f5mN       jIbKX KUBKM      yZn4P   ");
         }
         /// <summary>
-        /// Get logged in user response
+        ///     Get logged in user response
         /// </summary>
-        /// <param name="htmlSource"></param>
-        /// <returns></returns>
         public static InstaWebBrowserResponse GetLoggedInUserResponse(string htmlSource)
         {
             if (string.IsNullOrEmpty(htmlSource) || string.IsNullOrWhiteSpace(htmlSource))
@@ -70,5 +73,76 @@ namespace InstagramApiSharp.Helpers
 
             return null;
         }
+        /*
+        /// <summary>
+        ///     Get facebook login uri
+        /// </summary>
+        public static Uri GetFacebookLoginUri()
+        {
+            try
+            {
+                var init = new JObject
+                {
+                    {"init", DateTime.UtcNow.ToUnixTimeMiliSeconds()}
+                };
+                if (Uri.TryCreate(string.Format(InstaApiConstants.FACEBOOK_LOGIN_URI,
+                    init.ToString(Formatting.None)), UriKind.RelativeOrAbsolute, out Uri fbUri))
+                    return fbUri;
+            }
+            catch { }
+            return null;
+        }
+        /// <summary>
+        ///     Get facebook user agent
+        /// </summary>
+        public static string GetFacebookUserAgent()
+        {
+            return ExtensionHelper.GenerateFacebookUserAgent();
+        }
+        /// <summary>
+        ///     Get facebook account from HTML source
+        /// </summary>
+        /// <param name="htmlSource">Html source code</param>
+        public static InstaFacebookAccountInfo GetAccountFromHtml(string htmlSource)
+        {
+            if (string.IsNullOrEmpty(htmlSource) || string.IsNullOrWhiteSpace(htmlSource))
+                return null;
+
+            try
+            {
+                var start = "</script><script id=\"u_0_l\">";
+                var end = ";</script>";
+                if (htmlSource.Contains(start))
+                {
+                    var str = htmlSource.Substring(htmlSource.IndexOf(start) + start.Length);
+                    str = str.Substring(0, str.IndexOf(end));
+                    start = ".handleDefines(";
+                    end = ";new";
+                    str = str.Substring(str.IndexOf(start) + start.Length);
+                    str = str.Substring(0, str.IndexOf(end));
+                    start = "{\"USER_ID\"";
+                    end = "}";
+                    //{"USER_ID":"100017040039489","ACCOUNT_ID":"100017040039489","NAME":"Marco Antonari","SHORT_NAME":"Marco","IS_MESSENGER_ONLY_USER":false,"IS_DEACTIVATED_ALLOWED_ON_MESSENGER":false}
+                    var source = str.Substring(str.IndexOf(start));
+                    source = source.Substring(0, source.IndexOf(end) + 1);
+                    var obj = JsonConvert.DeserializeObject<InstaFacebookAccountInfo>(source);
+
+                    //"dtsg_ag":{"token":"Adxvx0f7MDoCo3P0vfUwmdngpXIQ4lDdLpxmXCx-f6W4Xg:AdynVHeRdMu1puL5FdV5uhSvJm4HKoPBizFt8FUfebhOjw","valid_for":86400,"expire":1539519980}
+                    start = "\"dtsg_ag\":";
+                    str = str.Substring(str.IndexOf(start) + start.Length);
+                    str = str.Substring(0, str.IndexOf(end) + 1);
+                    var token = JsonConvert.DeserializeObject<InstaFacebookAccountToken>(str);
+                    if (token == null || token != null && string.IsNullOrEmpty(token.Token))
+                        return null;
+                    obj.Token = token.Token;
+
+                    return obj;
+                }
+            }
+            catch (Exception) { System.Diagnostics.Debug.WriteLine("FacebookLoginHelper.GetAccountFromHtml exception"); }
+
+            return null;
+        }*/
+
     }
 }
