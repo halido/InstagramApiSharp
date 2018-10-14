@@ -68,7 +68,7 @@ namespace ChallengeRequireExample
         // Verify sms or email verification code for login.
 
         const string AppName = "Challenge Required";
-        const string StateFile = "state.bin";
+         string StateFile = "state.bin";
         readonly Size NormalSize = new Size(432, 164);
         readonly Size ChallengeSize = new Size(432, 604);
         private static IInstaApi InstaApi;
@@ -91,7 +91,7 @@ namespace ChallengeRequireExample
                 UserName = txtUser.Text,
                 Password = txtPass.Text
             };
-
+            StateFile = userSession.UserName + ".json";
             InstaApi = InstaApiBuilder.CreateBuilder()
                 .SetUser(userSession)
                 .UseLogger(new DebugLogger(LogLevel.All))
@@ -107,6 +107,7 @@ namespace ChallengeRequireExample
                     {
                         InstaApi.LoadStateDataFromStream(fs);
                     }
+                    SaveSession();
                 }
             }
             catch (Exception ex)
@@ -365,14 +366,22 @@ namespace ChallengeRequireExample
                 return;
             if (!InstaApi.IsUserAuthenticated)
                 return;
-            var state = InstaApi.GetStateDataAsStream();
-            using (var fileStream = File.Create(StateFile))
+            var state = InstaApi.GetStateDataAsString();
+            using (var fileStream = File.CreateText(StateFile))
             {
-                state.Seek(0, SeekOrigin.Begin);
-                state.CopyTo(fileStream);
+                fileStream.Write(state);
             }
         }
 
+        private void Form1_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtSubmitPhoneForChallenge_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
     public static class DebugUtils
     {

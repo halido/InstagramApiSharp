@@ -172,5 +172,8 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="userId">User id (pk)</param>
         Task<IResult<bool>> ReportUserAsync(long userId);
+
+        Task<IResult<InstaMediaList>> GetUserMediaAsync(long userId,
+            PaginationParameters paginationParameters);
     }
 }

@@ -753,7 +753,7 @@ namespace InstagramApiSharp.API.Processors
             return Result.UnExpectedResponse<InstaUserListShortResponse>(response, json);
         }
 
-        private async Task<IResult<InstaMediaList>> GetUserMediaAsync(long userId,
+        public async Task<IResult<InstaMediaList>> GetUserMediaAsync(long userId,
                                                     PaginationParameters paginationParameters)
         {
             var mediaList = new InstaMediaList();
