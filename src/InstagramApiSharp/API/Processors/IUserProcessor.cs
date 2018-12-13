@@ -196,11 +196,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="userId">User id</param>
         Task<IResult<InstaFriendshipStatus>> UnFollowUserAsync(long userId);
 
-        /// <summary>
-        ///     Report user
-        /// </summary>
-        /// <param name="userId">User id (pk)</param>
-        Task<IResult<bool>> ReportUserAsync(long userId);
+    
 
         Task<IResult<InstaMediaList>> GetUserMediaAsync(long userId,
             PaginationParameters paginationParameters);
