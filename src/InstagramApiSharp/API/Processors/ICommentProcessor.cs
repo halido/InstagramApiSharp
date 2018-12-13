@@ -46,7 +46,7 @@ namespace InstagramApiSharp.API.Processors
         ///     Get media comments likers
         /// </summary>
         /// <param name="mediaId">Media id</param>
-        Task<IResult<bool>> GetMediaCommentLikersAsync(string mediaId);
+        Task<IResult<InstaLikersList>> GetMediaCommentLikersAsync(string mediaId);
 
         /// <summary>
         ///     Get media comments
@@ -66,7 +66,7 @@ namespace InstagramApiSharp.API.Processors
         /// <summary>
         ///     Like media comment
         /// </summary>
-        /// <param name="commentId">Comment id</param>
+        /// <param name="commentId">pass Pk.Tostring() for commentId</param>
         Task<IResult<bool>> LikeCommentAsync(string commentId);
 
         /// <summary>
@@ -87,5 +87,11 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="commentId">Comment id</param>
         Task<IResult<bool>> UnlikeCommentAsync(string commentId);
+        /// <summary>
+        ///     Translate comment or captions
+        ///     <para>Note: use this function to translate captions too! (i.e: <see cref="InstaCaption.Pk"/>)</para>
+        /// </summary>
+        /// <param name="commentIds">Comment id(s) (Array of <see cref="InstaComment.Pk"/>)</param>
+        Task<IResult<InstaTranslateList>> TranslateCommentAsync(params long[] commentIds);
     }
 }

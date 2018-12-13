@@ -31,6 +31,22 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaBusinessUser>> AddOrChangeBusinessButtonAsync(InstaBusinessPartner businessPartner, Uri uri);
 
         /// <summary>
+        ///     Add users to approval branded whitelist
+        /// </summary>
+        /// <param name="userIdsToAdd">User ids (pk) to add</param>
+        Task<IResult<InstaBrandedContent>> AddUserToBrandedWhiteListAsync(params long[] userIdsToAdd);
+
+        /// <summary>
+        ///     Disable branded content approval
+        /// </summary>
+        Task<IResult<InstaBrandedContent>> DisbaleBrandedContentApprovalAsync();
+
+        /// <summary>
+        ///     Enable branded content approval
+        /// </summary>
+        Task<IResult<InstaBrandedContent>> EnableBrandedContentApprovalAsync();
+
+        /// <summary>
         ///     Change business category
         ///     <para>Note: Get it from <see cref="IBusinessProcessor.GetSubCategoriesAsync(string)"/></para>
         /// </summary>
@@ -83,7 +99,13 @@ namespace InstagramApiSharp.API.Processors
         /// <summary>
         ///     Get suggested categories
         /// </summary>
-        Task<IResult<InstaBusinessSugesstedCategoryList>> GetSuggestedCategoriesAsync();
+        Task<IResult<InstaBusinessSuggestedCategoryList>> GetSuggestedCategoriesAsync();
+        
+        /// <summary>
+        ///     Get branded content approval settings
+        ///     <para>Note: Only approved partners can tag you in branded content when you require approvals.</para>
+        /// </summary>
+        Task<IResult<InstaBrandedContent>> GetBrandedContentApprovalAsync();
 
         /// <summary>
         ///     Remove button from your business account
@@ -102,15 +124,30 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaBusinessCityLocationList>> SearchCityLocationAsync(string cityOrTown);
 
         /// <summary>
+        ///     Search branded users for adding to your branded whitelist
+        /// </summary>
+        /// <param name="query">Query(name, username or...) to search</param>
+        /// <param name="count">Count</param>
+        Task<IResult<InstaDiscoverSearchResult>> SearchBrandedUsersAsync(string query, int count = 85);
+
+        /// <summary>
         ///     Star direct thread
         /// </summary>
         /// <param name="threadId">Thread id</param>
         Task<IResult<bool>> StarDirectThreadAsync(string threadId);
+        
         /// <summary>
         ///     Unstar direct thread
         /// </summary>
         /// <param name="threadId">Thread id</param>
         Task<IResult<bool>> UnStarDirectThreadAsync(string threadId);
+
+        /// <summary>
+        ///     Remove users from approval branded whitelist
+        /// </summary>
+        /// <param name="userIdsToRemove">User ids (pk) to remove</param>
+        Task<IResult<InstaBrandedContent>> RemoveUserFromBrandedWhiteListAsync(params long[] userIdsToRemove);
+
         /// <summary>
         ///     Update business information
         /// </summary>

@@ -12,6 +12,12 @@ namespace InstagramApiSharp.API.Processors
     public interface IMessagingProcessor
     {
         /// <summary>
+        ///     Add users to group thread
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        /// <param name="userIds">User ids (pk)</param>
+        Task<IResult<InstaDirectInboxThread>> AddUserToGroupThreadAsync(string threadId, params long[] userIds);
+        /// <summary>
         ///     Approve direct pending request
         /// </summary>
         /// <param name="threadId">Thread ids</param>
@@ -29,27 +35,42 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<bool>> DeclineDirectPendingRequestsAsync(params string[] threadIds);
 
         /// <summary>
+        ///     Delete direct thread
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        Task<IResult<bool>> DeleteDirectThreadAsync(string threadId);
+
+        /// <summary>
+        ///     Delete self message in direct
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        Task<IResult<bool>> DeleteSelfMessageAsync(string threadId, string itemId);
+
+        /// <summary>
         ///     Get direct inbox threads for current user asynchronously
         /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <returns>
         ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaDirectInboxContainer" />
         /// </returns>
-        Task<IResult<InstaDirectInboxContainer>> GetDirectInboxAsync(string nextOrCursorId = "");
+        Task<IResult<InstaDirectInboxContainer>> GetDirectInboxAsync(PaginationParameters paginationParameters);
         /// <summary>
         ///     Get direct inbox thread by its id asynchronously
         /// </summary>
         /// <param name="threadId">Thread id</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <returns>
         ///     <see cref="InstaDirectInboxThread" />
         /// </returns>
-        Task<IResult<InstaDirectInboxThread>> GetDirectInboxThreadAsync(string threadId, string nextOrCursorId = "");
+        Task<IResult<InstaDirectInboxThread>> GetDirectInboxThreadAsync(string threadId, PaginationParameters paginationParameters);
         /// <summary>
         ///     Get direct pending inbox threads for current user asynchronously
         /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <returns>
         ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaDirectInboxContainer" />
         /// </returns>
-        Task<IResult<InstaDirectInboxContainer>> GetPendingDirectAsync(string nextOrCursorId = "");
+        Task<IResult<InstaDirectInboxContainer>> GetPendingDirectAsync(PaginationParameters paginationParameters);
 
         /// <summary>
         ///     Get ranked recipients (threads and users) asynchronously
@@ -58,6 +79,16 @@ namespace InstagramApiSharp.API.Processors
         ///     <see cref="InstaRecipients" />
         /// </returns>
         Task<IResult<InstaRecipients>> GetRankedRecipientsAsync();
+
+        /// <summary>
+        ///     Get ranked recipients (threads and users) asynchronously
+        ///     <para>Note: Some recipient has User, some recipient has Thread</para>
+        /// </summary>
+        /// <param name="username">Username to search</param>
+        /// <returns>
+        ///     <see cref="InstaRecipients" />
+        /// </returns>
+        Task<IResult<InstaRecipients>> GetRankedRecipientsByUsernameAsync(string username);
 
         /// <summary>
         ///     Get recent recipients (threads and users) asynchronously
@@ -242,9 +273,19 @@ namespace InstagramApiSharp.API.Processors
         ///     Share media to direct thread
         /// </summary>
         /// <param name="mediaId">Media id</param>
-        /// <param name="mediaType">Media id</param>
+        /// <param name="mediaType">Media type</param>
+        /// <param name="text">Text to send</param>
         /// <param name="threadIds">Thread ids</param>
-        Task<IResult<bool>> ShareMediaToThreadAsync(string mediaId, InstaMediaType mediaType, params string[] threadIds);
+        Task<IResult<bool>> ShareMediaToThreadAsync(string mediaId, InstaMediaType mediaType, string text, params string[] threadIds);
+
+        /// <summary>
+        ///     Share media to user id
+        /// </summary>
+        /// <param name="mediaId">Media id</param>
+        /// <param name="mediaType">Media type</param>
+        /// <param name="text">Text to send</param>
+        /// <param name="userIds">User ids (pk)</param>
+        Task<IResult<bool>> ShareMediaToUserAsync(string mediaId, InstaMediaType mediaType, string text, params long[] userIds);
 
         [Obsolete("ShareUserAsync is deprecated. Use SendDirectProfileAsync instead.")]
         /// <summary>

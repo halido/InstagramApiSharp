@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Android.DeviceInfo;
 using InstagramApiSharp.Classes.Models;
+using InstagramApiSharp.Classes.ResponseWrappers;
+using InstagramApiSharp.Converters;
 using InstagramApiSharp.Helpers;
 using InstagramApiSharp.Logger;
 using Newtonsoft.Json;
@@ -41,7 +43,7 @@ namespace InstagramApiSharp.API.Processors
         ///     Get channel by user id (pk) => channel owner
         /// </summary>
         /// <param name="userId">User id (pk) => channel owner</param>
-        /// <param name="paginationParameters">Pagination parameters</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         public async Task<IResult<InstaTVChannel>> GetChannelByIdAsync(long userId, PaginationParameters paginationParameters)
         {
             UserAuthValidator.Validate(_userAuthValidate);
@@ -52,7 +54,7 @@ namespace InstagramApiSharp.API.Processors
         ///     Get channel by <seealso cref="InstaTVChannelType"/>
         /// </summary>
         /// <param name="channelType">Channel type</param>
-        /// <param name="paginationParameters">Pagination parameters</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         public async Task<IResult<InstaTVChannel>> GetChannelByTypeAsync(InstaTVChannelType channelType, PaginationParameters paginationParameters)
         {
             UserAuthValidator.Validate(_userAuthValidate);
@@ -74,13 +76,14 @@ namespace InstagramApiSharp.API.Processors
 
                 if (response.StatusCode != HttpStatusCode.OK)
                     return Result.UnExpectedResponse<InstaTVSearch>(response, json);
-                var obj = JsonConvert.DeserializeObject<InstaTVSearch>(json);
-                return Result.Success(obj);
+                var obj = JsonConvert.DeserializeObject<InstaTVSearchResponse>(json);
+
+                return Result.Success(ConvertersFabric.Instance.GetTVSearchConverter(obj).Convert());
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaTVSearch>(exception.Message);
+                return Result.Fail<InstaTVSearch>(exception);
             }
         }
 
@@ -99,13 +102,14 @@ namespace InstagramApiSharp.API.Processors
                 
                 if (response.StatusCode != HttpStatusCode.OK)
                     return Result.UnExpectedResponse<InstaTV>(response, json);
-                var obj = JsonConvert.DeserializeObject<InstaTV>(json);
-                return Result.Success(obj);
+                var obj = JsonConvert.DeserializeObject<InstaTVResponse>(json);
+
+                return Result.Success(ConvertersFabric.Instance.GetTVConverter(obj).Convert());
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaTV>(exception.Message);
+                return Result.Fail<InstaTV>(exception);
             }
         }
         /// <summary>
@@ -124,13 +128,14 @@ namespace InstagramApiSharp.API.Processors
 
                 if (response.StatusCode != HttpStatusCode.OK)
                     return Result.UnExpectedResponse<InstaTVSearch>(response, json);
-                var obj = JsonConvert.DeserializeObject<InstaTVSearch>(json);
-                return Result.Success(obj);
+                var obj = JsonConvert.DeserializeObject<InstaTVSearchResponse>(json);
+
+                return Result.Success(ConvertersFabric.Instance.GetTVSearchConverter(obj).Convert());
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaTVSearch>(exception.Message);
+                return Result.Fail<InstaTVSearch>(exception);
             }
         }
 
@@ -173,21 +178,22 @@ namespace InstagramApiSharp.API.Processors
                     data.Add("id", channelType.Value.GetRealChannelType());
                 else
                     data.Add("id", $"user_{userId}");
-                if (paginationParameters != null && !string.IsNullOrEmpty(paginationParameters.NextId))
-                    data.Add("max_id", paginationParameters.NextId);
+                if (paginationParameters != null && !string.IsNullOrEmpty(paginationParameters.NextMaxId))
+                    data.Add("max_id", paginationParameters.NextMaxId);
                 var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
                 
                 if (response.StatusCode != HttpStatusCode.OK)
                     return Result.UnExpectedResponse<InstaTVChannel>(response, json);
-                var obj = JsonConvert.DeserializeObject<InstaTVChannel>(json);
-                return Result.Success(obj);
+                var obj = JsonConvert.DeserializeObject<InstaTVChannelResponse>(json);
+
+                return Result.Success(ConvertersFabric.Instance.GetTVChannelConverter(obj).Convert());
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaTVChannel>(exception.Message);
+                return Result.Fail<InstaTVChannel>(exception);
             }
         }
     }

@@ -27,6 +27,7 @@ using InstagramApiSharp.Classes.Models;
 using System.Net;
 using System.Net.Sockets;
 using InstagramApiSharp;
+using InstagramApiSharp.Classes.SessionHandlers;
 /////////////////////////////////////////////////////////////////////
 ////////////////////// IMPORTANT NOTE ///////////////////////////////
 // Please check wiki pages for more information:
@@ -96,11 +97,12 @@ namespace ChallengeRequireExample
                 .SetUser(userSession)
                 .UseLogger(new DebugLogger(LogLevel.All))
                 .SetRequestDelay(RequestDelay.FromSeconds(0, 1))
+                // Session handler, set a file path to save/load your state/session data
+                .SetSessionHandler(new FileSessionHandler() {FilePath =  StateFile })
                 .Build();
             Text = $"{AppName} Connecting";
-
+            //Load session
             LoadSession();
-
             if (!InstaApi.IsUserAuthenticated)
             {
                 var logInResult = await InstaApi.LoginAsync();
@@ -231,9 +233,43 @@ namespace ChallengeRequireExample
 
         }
 
-        private void ResendButton_Click(object sender, EventArgs e)
+        private async void ResendButton_Click(object sender, EventArgs e)
         {
-            SendCodeButton_Click(null, null);
+            bool isEmail = false;
+            if (RadioVerifyWithEmail.Checked)
+                isEmail = true;
+
+            try
+            {
+                // Note: every request to this endpoint is limited to 60 seconds                 
+                if (isEmail)
+                {
+                    // send verification code to email
+                    var email = await InstaApi.RequestVerifyCodeToEmailForChallengeRequireAsync(replayChallenge: true);
+                    if (email.Succeeded)
+                    {
+                        LblForSmsEmail.Text = $"We sent verification code one more time\r\nto this email:\n{email.Value.StepData.ContactPoint}";
+                        VerifyCodeGroupBox.Visible = true;
+                        SelectMethodGroupBox.Visible = false;
+                    }
+                    else
+                        MessageBox.Show(email.Info.Message, "ERR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    // send verification code to phone number
+                    var phoneNumber = await InstaApi.RequestVerifyCodeToSMSForChallengeRequireAsync(replayChallenge: true);
+                    if (phoneNumber.Succeeded)
+                    {
+                        LblForSmsEmail.Text = $"We sent verification code one more time\r\nto this phone number(it's end with this):{phoneNumber.Value.StepData.ContactPoint}";
+                        VerifyCodeGroupBox.Visible = true;
+                        SelectMethodGroupBox.Visible = false;
+                    }
+                    else
+                        MessageBox.Show(phoneNumber.Info.Message, "ERR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "EX", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
         private async void VerifyButton_Click(object sender, EventArgs e)
@@ -315,10 +351,15 @@ namespace ChallengeRequireExample
         private async void GetFeedButton_Click(object sender, EventArgs e)
         {
             if (InstaApi == null)
+            {
                 MessageBox.Show("Login first.");
+                return;
+            }
             if (!InstaApi.IsUserAuthenticated)
+            {
                 MessageBox.Show("Login first.");
-
+                return;
+            }
             var x = await InstaApi.FeedProcessor.GetExploreFeedAsync(PaginationParameters.MaxPagesToLoad(1));
 
             if (x.Succeeded)
@@ -348,21 +389,24 @@ namespace ChallengeRequireExample
 
         void LoadSession()
         {
-            try
-            {
-                if (File.Exists(StateFile))
-                {
-                    Debug.WriteLine("Loading state from file");
-                    using (var fs = File.OpenRead(StateFile))
-                    {
-                        InstaApi.LoadStateDataFromStream(fs);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-            }
+            InstaApi?.SessionHandler?.Load();
+
+            //// Old load session
+            //try
+            //{
+            //    if (File.Exists(StateFile))
+            //    {
+            //        Debug.WriteLine("Loading state from file");
+            //        using (var fs = File.OpenRead(StateFile))
+            //        {
+            //            InstaApi.LoadStateDataFromStream(fs);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine(ex);
+            //}
         }
         void SaveSession()
         {
@@ -370,11 +414,15 @@ namespace ChallengeRequireExample
                 return;
             if (!InstaApi.IsUserAuthenticated)
                 return;
-            var state = InstaApi.GetStateDataAsString();
-            using (var fileStream = File.CreateText(StateFile))
-            {
-                fileStream.Write(state);
-            }
+            InstaApi.SessionHandler.Save();
+
+            //// Old save session 
+            //var state = InstaApi.GetStateDataAsStream();
+            //using (var fileStream = File.Create(StateFile))
+            //{
+            //    state.Seek(0, SeekOrigin.Begin);
+            //    state.CopyTo(fileStream);
+            //}
         }
 
         private void Form1_Load_1(object sender, EventArgs e)

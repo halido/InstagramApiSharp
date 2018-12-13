@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Classes.ResponseWrappers;
 using InstagramApiSharp.Helpers;
@@ -37,7 +38,7 @@ namespace InstagramApiSharp.Converters
                 VideoDuration = SourceObject.VideoDuration ?? 0,
                 AdAction = SourceObject.AdAction,
                 SupportsReelReactions = SourceObject.SupportsReelReactions,
-                StoryCTA = SourceObject.StoryCTA
+                ShowOneTapTooltip = SourceObject.ShowOneTapTooltip
             };
 
             if (SourceObject.User != null)
@@ -51,21 +52,31 @@ namespace InstagramApiSharp.Converters
                     instaStory.ImageList.Add(new InstaImage(image.Url, int.Parse(image.Width),
                         int.Parse(image.Height)));
 
-            if (SourceObject.VideoVersions != null)
+            if (SourceObject.VideoVersions != null && SourceObject.VideoVersions.Any())
                 foreach (var video in SourceObject.VideoVersions)
                     instaStory.VideoList.Add(new InstaVideo(video.Url, int.Parse(video.Width), int.Parse(video.Height),
                         video.Type));
 
-            if (SourceObject.ReelMentions != null)
+            if (SourceObject.ReelMentions != null && SourceObject.ReelMentions.Any())
                 foreach (var mention in SourceObject.ReelMentions)
                     instaStory.ReelMentions.Add(ConvertersFabric.Instance.GetMentionConverter(mention).Convert());
-            if (SourceObject.StoryHashtags != null)
+            if (SourceObject.StoryHashtags != null && SourceObject.StoryHashtags.Any())
                 foreach (var hashtag in SourceObject.StoryHashtags)
                     instaStory.StoryHashtags.Add(ConvertersFabric.Instance.GetMentionConverter(hashtag).Convert());
 
-            if (SourceObject.StoryLocations != null)
+            if (SourceObject.StoryLocations != null && SourceObject.StoryLocations.Any())
                 foreach (var location in SourceObject.StoryLocations)
                     instaStory.StoryLocations.Add(ConvertersFabric.Instance.GetLocationConverter(location).Convert());
+
+            if (SourceObject.StoryFeedMedia != null && SourceObject.StoryFeedMedia.Any())
+                foreach (var storyFeed in SourceObject.StoryFeedMedia)
+                    instaStory.StoryFeedMedia.Add(ConvertersFabric.Instance.GetStoryFeedMediaConverter(storyFeed).Convert());
+
+            if (SourceObject.StoryCTA != null && SourceObject.StoryCTA.Any())
+                foreach (var cta in SourceObject.StoryCTA)
+                    if (cta.Links != null && cta.Links.Any())
+                        foreach (var link in cta.Links)
+                            instaStory.StoryCTA.Add(ConvertersFabric.Instance.GetStoryCtaConverter(link).Convert());
 
             return instaStory;
         }

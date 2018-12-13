@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -76,7 +77,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, (InstaComment)null);
+                return Result.Fail<InstaComment>(exception);
             }
         }
 
@@ -108,7 +109,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
             }
         }
 
@@ -141,7 +142,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
             }
         }
 
@@ -173,7 +174,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
             }
         }
 
@@ -204,7 +205,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
             }
         }
 
@@ -212,7 +213,7 @@ namespace InstagramApiSharp.API.Processors
         ///     Get media comments likers
         /// </summary>
         /// <param name="mediaId">Media id</param>
-        public async Task<IResult<bool>> GetMediaCommentLikersAsync(string mediaId)
+        public async Task<IResult<InstaLikersList>> GetMediaCommentLikersAsync(string mediaId)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
@@ -222,15 +223,21 @@ namespace InstagramApiSharp.API.Processors
                     _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaLikersList>(response, json);
 
-                return response.StatusCode == HttpStatusCode.OK
-                    ? Result.Success(true)
-                    : Result.UnExpectedResponse<bool>(response, json);
+                var likers = new InstaLikersList();
+                var likersResponse = JsonConvert.DeserializeObject<InstaMediaLikersResponse>(json);
+                likers.UsersCount = likersResponse.UsersCount;
+                likers.AddRange(
+                    likersResponse.Users.Select(ConvertersFabric.Instance.GetUserShortConverter)
+                        .Select(converter => converter.Convert()));
+                return Result.Success(likers);
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail<InstaLikersList>(exception);
             }
         }
 
@@ -245,7 +252,13 @@ namespace InstagramApiSharp.API.Processors
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var commentsUri = UriCreator.GetMediaCommentsUri(mediaId, paginationParameters.NextId);
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
+
+                var commentsUri = UriCreator.GetMediaCommentsUri(mediaId, paginationParameters.NextMaxId);
+                if (!string.IsNullOrEmpty(paginationParameters.NextMinId))
+                    commentsUri = UriCreator.GetMediaCommentsMinIdUri(mediaId, paginationParameters.NextMinId);
+
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, commentsUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
@@ -279,9 +292,12 @@ namespace InstagramApiSharp.API.Processors
                     commentListResponse.MoreCommentsAvailable = nextComments.Value.MoreCommentsAvailable;
                     commentListResponse.MoreHeadLoadAvailable = nextComments.Value.MoreHeadLoadAvailable;
                     commentListResponse.Comments.AddRange(nextComments.Value.Comments);
+                    paginationParameters.NextMaxId = nextComments.Value.NextMaxId;
+                    paginationParameters.NextMinId = nextComments.Value.NextMinId;
                     pagesLoaded++;
                 }
-
+                paginationParameters.NextMaxId = commentListResponse.NextMaxId;
+                paginationParameters.NextMinId = commentListResponse.NextMinId;
                 var converter = ConvertersFabric.Instance.GetCommentListConverter(commentListResponse);
                 return Result.Success(converter.Convert());
             }
@@ -303,8 +319,14 @@ namespace InstagramApiSharp.API.Processors
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
-            { 
-                var commentsUri = UriCreator.GetMediaInlineCommentsUri(mediaId, targetCommentId, paginationParameters.NextId);
+            {
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
+
+                var commentsUri = UriCreator.GetMediaInlineCommentsUri(mediaId, targetCommentId, paginationParameters.NextMaxId);
+                if (!string.IsNullOrEmpty(paginationParameters.NextMinId))
+                    commentsUri = UriCreator.GetMediaInlineCommentsWithMinIdUri(mediaId, targetCommentId, paginationParameters.NextMinId);
+
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, commentsUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
@@ -337,8 +359,12 @@ namespace InstagramApiSharp.API.Processors
                     commentListResponse.HasMoreHeadChildComments = nextComments.Value.HasMoreHeadChildComments;
                     commentListResponse.HasMoreTailChildComments = nextComments.Value.HasMoreTailChildComments;
                     commentListResponse.ChildComments.AddRange(nextComments.Value.ChildComments);
+                    paginationParameters.NextMaxId = nextComments.Value.NextMaxId;
+                    paginationParameters.NextMinId = nextComments.Value.NextMinId;
                     pagesLoaded++;
                 }
+                paginationParameters.NextMaxId = commentListResponse.NextMaxId;
+                paginationParameters.NextMinId = commentListResponse.NextMinId;
                 var comments = ConvertersFabric.Instance.GetInlineCommentsConverter(commentListResponse).Convert();
                 return Result.Success(comments);
             }
@@ -376,7 +402,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
             }
         }
 
@@ -419,7 +445,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, (InstaComment)null);
+                return Result.Fail<InstaComment>(exception);
             }
         }
         /// <summary>
@@ -453,7 +479,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
             }
         }
 
@@ -485,7 +511,39 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
+            }
+        }
+
+        /// <summary>
+        ///     Translate comment or captions
+        ///     <para>Note: use this function to translate captions too! (i.e: <see cref="InstaCaption.Pk"/>)</para>
+        /// </summary>
+        /// <param name="commentIds">Comment id(s) (Array of <see cref="InstaComment.Pk"/>)</param>
+        public async Task<IResult<InstaTranslateList>> TranslateCommentAsync(params long[] commentIds)
+        {
+            try
+            {
+                if (commentIds == null || commentIds != null && !commentIds.Any())
+                    throw new ArgumentException("At least one comment id require");
+
+                var instaUri = UriCreator.GetTranslateCommentsUri(string.Join(",", commentIds));
+
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK || string.IsNullOrEmpty(json))
+                    return Result.UnExpectedResponse<InstaTranslateList>(response, json);
+
+                var obj = JsonConvert.DeserializeObject<InstaTranslateContainerResponse>(json);
+
+                return Result.Success(ConvertersFabric.Instance.GetTranslateContainerConverter(obj).Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaTranslateList>(exception);
             }
         }
 

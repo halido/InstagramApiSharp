@@ -101,6 +101,31 @@ namespace InstagramApiSharp.Converters
                 }
                 catch { }
             }
+            if (SourceObject.User.ProfileContextIds != null && SourceObject.User.ProfileContextIds.Any())
+            {
+                foreach (var prof in SourceObject.User.ProfileContextIds)
+                {
+                    try
+                    {
+                        var context = new InstaUserContext
+                        {
+                            End = prof.End,
+                            Start = prof.Start,
+                            Username = prof.Username
+                        };
+                        userInfo.ProfileContextIds.Add(context);
+                    }
+                    catch { }
+                }
+            }
+            if (SourceObject.User.FriendshipStatus != null)
+            {
+                try
+                {
+                    userInfo.FriendshipStatus = ConvertersFabric.Instance.GetFriendShipStatusConverter(SourceObject.User.FriendshipStatus).Convert();
+                }
+                catch { }
+            }
             return userInfo;
         }
     }

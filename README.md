@@ -5,8 +5,10 @@ Supports: Create new account, verify account, edit profile, set profile picture 
 
 | Target | Branch | Version | Download link |
 | ------ | ------ | ------ | ------ |
-| Nuget | master | v1.1.3.0 | [![NuGet](https://img.shields.io/nuget/v/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) |
+| Nuget | master | v1.1.6.1 | [![NuGet](https://img.shields.io/nuget/v/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) |
 
+## IMPORTANT NOTE:
+`PaginationParameters` updated, you must use `NextMaxId` instead of using old `NextId`!!!!!
 
 ## Note
 This library is based on [InstaSharper](https://github.com/a-legotin/InstaSharper) with more functions and flexibility.
@@ -25,6 +27,7 @@ Note: this library uses [Json.NET v10.0.3 and above](https://www.nuget.org/packa
 | Platform | Supported Version |
 | ------ | ------ |
 | .NET Framework | 4.5.2 |
+| .NET Standard | 1.3 |
 | .NET Standard | 2.0 |
 | .NET Core(UWP) | 10.0.10240 |
 
@@ -54,11 +57,19 @@ Some of features:
 ## Usage
 #### Use builder to get Insta API instance:
 ```c#
-var api = new InstaApiBuilder()
+var api = InstaApiBuilder.CreateBuilder()
+                // required
+                .SetUser(new UserSessionData(...Your user...))
+                // optional
                 .UseLogger(new SomeLogger())
+                // optional
                 .UseHttpClient(new SomeHttpClient())
-                .SetUser(new UserCredentials(...You user...))
+                // optional
                 .UseHttpClientHandler(httpHandlerWithSomeProxy)
+                // optional
+                .SetRequestDelay(new SomeRequestDelay())
+                // optional
+                .SetApiVersion(SomeApiVersion)
                 .Build();
 ```
 ##### Note: every API method has synchronous implementation as well.
@@ -71,72 +82,59 @@ Task<IResult<object>>
 ```
 
 ## Wiki
-Check [Wiki page](https://github.com/ramtinak/InstagramApiSharp/wiki) for documentation.
+Check [Wiki pages](https://github.com/ramtinak/InstagramApiSharp/wiki) for documentation.
 
 ## Version changes
-v1.1.3.0
-- [Add] Suggested users
-- [Add] Follow/Unfollow hashtags
-- [Add] Get stories of an hashtag
-- [Add] Get recent hashtag medias
-- [Add] Get ranked hashtag medias
-- [Add] Sync phone contact
-- [Add] Get direct users presence
-- [Add] Get friendship status for multiple ids
-- [Add] Get suggested hashtags
-- [Add] Get following hashtags information
-- [Add] Get suggestion details
-- [Add] Get highlights archive
-- [Add] Get highlights archive medias
-- [Business wiki page added](https://github.com/ramtinak/InstagramApiSharp/wiki/Business-account)
+v1.1.6.1
+- [Bugfix] for GetFollowingRecentActivityFeedAsync pagination [now works correctly]
+- [Add] new UploadAlbumAsync (check [#95 issue](https://github.com/ramtinak/InstagramApiSharp/issues/95))
+- [Add] GetBlockedMediasAsync to MediaProcessor
+- [Add] GetMediaByIdsAsync to MediaProcessor for getting multiple medias
 
-v1.1.2.8
-- [Bugfix] for uploading album (photos)
+v1.1.6.0
+- [Bugfix] for GetFollowingRecentActivityFeedAsync pagination
+- [Add] InstaImageUpload class (use this for uploading photo/album from now)
+- [Add] User tags support to UploadAlbumAsync (see [album wiki page](https://github.com/ramtinak/InstagramApiSharp/wiki/Upload-album))
+- [Update] UploadPhotoAsync (you should use InstaImageUpload instead! see [photo wiki page](https://github.com/ramtinak/InstagramApiSharp/wiki/Upload-photo))
 
-v1.1.2.7
-- [Support] DebugLogger for uwp
+v1.1.5.5
+- [Update] Result with more error support
+- [Add] MutualFirst flag added to GetUserFollowersAsync
 
-v1.1.2.6
-- [Add] SetRequestDelay to IInstaApi
-- [Wiki update] for [FAQ page](https://github.com/ramtinak/InstagramApiSharp/wiki/FAQ)
+v1.1.5.2
+- [Add] ability to request verification code again (thx to [@sh2ezo](https://github.com/sh2ezo) for PR)
+- [Support] NetStandard 1.3
+- [Update] InstaRecentActivityConverter
+- [Add] PaginationParameters support to GetCollectionsAsync
+- [Rename] GetCollectionAsync to GetSingleCollectionAsync
+- [Add] PaginationParameters support to GetSingleCollectionAsync
+- [Add] GetLocationInfoAdd GetLocationInfo to LocationProcessor to LocationProcessor
+- [Add] EditCollectionAsync to CollectionProcessor
 
-v1.1.2.5
-- [Bugfix] for uploading video album (thx to [@rasaradin](https://github.com/rasaradin) for report)
+v1.1.5.1
+- [Add] to VerifyEmailByVerificationUriAsync to AccountProcessor
+- [Add] DeleteDirectThreadAsync to MessagingProcessor
+- [Add] DeleteSelfMessageAsync to MessagingProcessor
 
-v1.1.2.4
-- [Add] ValidateUrlAsync to BusinessProcessor
-- [Add] GetBusinessPartnersButtonsAsync to BusinessProcessor
-- [Add] AddOrChangeBusinessButtonAsync to BusinessProcessor
-- [Add] RemoveBusinessButtonAsync to BusinessProcessor
-- [Add] GetSuggestedCategoriesAsync to BusinessProcessor
-- [Add] GetCategoriesAsync to BusinessProcessor
-- [Add] GetSubCategoriesAsync to BusinessProcessor
-- [Add] SearchCityLocationAsync to BusinessProcessor
-- [Add] ChangeBusinessCategoryAsync to BusinessProcessor
-- [Add] GetBusinessAccountInformationAsync to BusinessProcessor
-- [Add] RemoveBusinessLocationAsync to BusinessProcessor
-- [Add] UpdateBusinessInfoAsync to BusinessProcessor
+v1.1.5.0
+- [Bugfix] for GetUserAsync
+- [Add] user tags support to UploadPhotoAsync
+- [Add] user tags edit to EditMediaAsync
+- [Add] Product tags to InstaMedia
+- [Add] user tag support to InstaCarouselItem
+- [Add] ShoppingProcessor
+- [Add] GetUserShoppableMediaAsync to ShoppingProcessor and UserProcessor
+- [Add] GetProductInfoAsync to ShoppingProcessor
+- [Add] MarkUserAsOverageAsync to UserProcessor
+- [Add] FavoriteUserAsync and UnFavoriteUserAsync to UserProcessor
+- [Add] FavoriteUserStoriesAsync and UnFavoriteUserStoriesAsync to UserProcessor
+- [Add] MuteUserMediaAsync and UnMuteUserMediaAsync to UserProcessor
+- [Add] HideMyStoryFromUserAsync and UnHideMyStoryFromUserAsync to UserProcessor
+- [Add] MuteFriendStoryAsync and UnMuteFriendStoryAsync to UserProcessor
+- [Add] GetBlockedStorySharingUsersStory to StoryProcessor
 
-v1.1.2.3
-- [Bugfix] for [#58](https://github.com/ramtinak/InstagramApiSharp/issues/58) (thx to [@mstrifonov](https://github.com/mstrifonov) and [@murdock477](https://github.com/murdock477) for report and tests)
-
-v1.1.2.2
-- [Change] minimun target platform to 10240(uwp)
-
-v1.1.2.1
-- [Update] edit media function (location support)
-- [Bugfix] for caption in upload photo [large photo]
-- [Bugfix] for caption in upload video [large video]
-- [Bugfix] for caption in upload album [large album]
-
-v1.1.2.0
-- [Bugfix] for [#55](https://github.com/ramtinak/InstagramApiSharp/issues/55) and add some properties to InstaFeed
-- [Bugfix] for [#53](https://github.com/ramtinak/InstagramApiSharp/issues/53) and add some properties to InstaRecentActivityFeed
-- [Add] Set accept language to InstaApi (thx to [@Lorymi](https://github.com/Lorymi) )
-- [Cleanup] and code refactoring some classes
-- [Add] Report media to MediaProcessor
-- [Add] Report user to UserProcessor
-- [Add] Business support to IInstaApi.BusinessProcessor
+v1.1.4.4
+- [Bugfix] for phone number/email login (now you can login with phone/email to as well) (spectial thanks to [@learn-itnow](https://github.com/learn-itnow) for his help)
 
 [Version changes](https://github.com/ramtinak/InstagramApiSharp/wiki/Version-changes) page
 

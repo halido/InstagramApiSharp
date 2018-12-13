@@ -41,7 +41,7 @@ namespace InstagramApiSharp.Converters
             return new InstaMediaConverter {SourceObject = responseMedia};
         }
         public IObjectConverter<InstaMedia, InstaMediaAlbumResponse> GetSingleMediaFromAlbumConverter(
-    InstaMediaAlbumResponse responseMedia)
+            InstaMediaAlbumResponse responseMedia)
         {
             return new InstaMediaAlbumConverter { SourceObject = responseMedia };
         }
@@ -152,6 +152,12 @@ namespace InstagramApiSharp.Converters
             return new InstaStoryItemConverter {SourceObject = storyItem};
         }
 
+        public IObjectConverter<InstaStoryFeedMedia, InstaStoryFeedMediaResponse> GetStoryFeedMediaConverter(
+            InstaStoryFeedMediaResponse storyItem)
+        {
+            return new InstaStoryFeedMediaConverter { SourceObject = storyItem };
+        }
+
         public IObjectConverter<InstaStory, InstaStoryResponse> GetStoryConverter(InstaStoryResponse storyItem)
         {
             return new InstaStoryConverter {SourceObject = storyItem};
@@ -167,6 +173,12 @@ namespace InstagramApiSharp.Converters
             InstaStoryMediaResponse storyMedia)
         {
             return new InstaStoryMediaConverter {SourceObject = storyMedia};
+        }
+
+        public IObjectConverter<InstaStoryCTA, InstaStoryCTAResponse> GetStoryCtaConverter(
+            InstaStoryCTAResponse storyCta)
+        {
+            return new InstaStoryCTAConverter { SourceObject = storyCta };
         }
 
         public IObjectConverter<InstaImage, ImageResponse> GetImageConverter(ImageResponse imageResponse)
@@ -196,6 +208,12 @@ namespace InstagramApiSharp.Converters
             InstaReelFeedResponse response)
         {
             return new InstaReelFeedConverter {SourceObject = response};
+        }
+
+        public IObjectConverter<InstaReelShare, InstaReelShareResponse> GetReelShareConverter(
+            InstaReelShareResponse response)
+        {
+            return new InstaReelShareConverter { SourceObject = response };
         }
 
         public IObjectConverter<InstaReelMention, InstaReelMentionResponse> GetMentionConverter(
@@ -228,12 +246,12 @@ namespace InstagramApiSharp.Converters
             return new InstaStoryFeedConverter {SourceObject = response};
         }
         public IObjectConverter<InstaHighlightFeeds, InstaHighlightFeedsResponse> GetHighlightFeedsConverter(
-    InstaHighlightFeedsResponse response)
+            InstaHighlightFeedsResponse response)
         {
             return new InstaHighlightConverter { SourceObject = response };
         }
         public IObjectConverter<InstaHighlightSingleFeed, InstaHighlightReelResponse> GetHighlightReelConverter(
-InstaHighlightReelResponse response)
+            InstaHighlightReelResponse response)
         {
             return new InstaHighlightReelConverter { SourceObject = response };
         }
@@ -362,8 +380,8 @@ InstaHighlightReelResponse response)
             return new InstaHashtagOwnerConverter { SourceObject = response };
         }
 
-        public IObjectConverter<InstaHashtagStory, InstaHashtagStoryContainerResponse> GetHashtagStoryConverter(
-            InstaHashtagStoryContainerResponse response)
+        public IObjectConverter<InstaHashtagStory, InstaHashtagStoryResponse> GetHashtagStoryConverter(
+            InstaHashtagStoryResponse response)
         {
             return new InstaHashtagStoryConverter { SourceObject = response };
         }
@@ -450,6 +468,126 @@ InstaHighlightReelResponse response)
             InstaHighlightShortListResponse response)
         {
             return new InstaHighlightShortListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBrandedContent, InstaBrandedContentResponse> GetBrandedContentConverter(
+            InstaBrandedContentResponse response)
+        {
+            return new InstaBrandedContentConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTranslate, InstaTranslateResponse> GetSingleTranslateConverter(
+            InstaTranslateResponse response)
+        {
+            return new InstaTranslateConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTranslateList, InstaTranslateContainerResponse> GetTranslateContainerConverter(
+            InstaTranslateContainerResponse response)
+        {
+            return new InstaTranslateContainerConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaPlaceShort, InstaPlaceShortResponse> GetPlaceShortConverter(
+            InstaPlaceShortResponse response)
+        {
+            return new InstaPlaceShortConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaPlace, InstaPlaceResponse> GetPlaceConverter(
+            InstaPlaceResponse response)
+        {
+            return new InstaPlaceConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaPlaceList, InstaPlaceListResponse> GetPlaceListConverter(
+            InstaPlaceListResponse response)
+        {
+            return new InstaPlaceListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserShortFriendship, InstaUserShortFriendshipResponse> GetUserShortFriendshipConverter(
+            InstaUserShortFriendshipResponse response)
+        {
+            return new InstaUserShortFriendshipConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTVUser, InstaTVUserResponse> GetTVUserConverter(
+            InstaTVUserResponse response)
+        {
+            return new InstaTVUserConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTVChannel, InstaTVChannelResponse> GetTVChannelConverter(
+            InstaTVChannelResponse response)
+        {
+            return new InstaTVChannelConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTVSelfChannel, InstaTVSelfChannelResponse> GetTVSelfChannelConverter(
+            InstaTVSelfChannelResponse response)
+        {
+            return new InstaTVSelfChannelConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTV, InstaTVResponse> GetTVConverter(
+            InstaTVResponse response)
+        {
+            return new InstaTVConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTVSearchResult, InstaTVSearchResultResponse> GetTVSearchResultConverter(
+            InstaTVSearchResultResponse response)
+        {
+            return new InstaTVSearchResultConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTVSearch, InstaTVSearchResponse> GetTVSearchConverter(
+            InstaTVSearchResponse response)
+        {
+            return new InstaTVSearchConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaMerchant, InstaMerchantResponse> GetMerchantConverter(
+            InstaMerchantResponse response)
+        {
+            return new InstaMerchantConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaProductTag, InstaProductContainerResponse> GetProductTagContainerConverter(
+            InstaProductContainerResponse response)
+        {
+            return new InstaProductContainerConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaProduct, InstaProductResponse> GetProductConverter(
+            InstaProductResponse response)
+        {
+            return new InstaProductConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaProductMediaList, InstaProductMediaListResponse> GetProductMediaListConverter(
+            InstaProductMediaListResponse response)
+        {
+            return new InstaProductMediaListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaProductInfo, InstaProductInfoResponse> GetProductInfoConverter(
+            InstaProductInfoResponse response)
+        {
+            return new InstaProductInfoConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserShortList, InstaBlockedUsersResponse> GetBlockedUsersConverter(
+            InstaBlockedUsersResponse response)
+        {
+            return new InstaBlockedUsersConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserLookup, InstaUserLookupResponse> GetUserLookupConverter(
+            InstaUserLookupResponse response)
+        {
+            return new InstaUserLookupConverter { SourceObject = response };
         }
     }
 }

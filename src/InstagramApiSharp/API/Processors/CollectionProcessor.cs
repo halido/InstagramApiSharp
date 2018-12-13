@@ -77,7 +77,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaCollectionItem>(exception.Message);
+                return Result.Fail<InstaCollectionItem>(exception);
             }
         }
 
@@ -119,7 +119,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaCollectionItem>(exception.Message);
+                return Result.Fail<InstaCollectionItem>(exception);
             }
         }
 
@@ -161,56 +161,155 @@ namespace InstagramApiSharp.API.Processors
         }
 
         /// <summary>
-        ///     Get your collection for given collection id
+        ///     Edit a collection
         /// </summary>
-        /// <param name="collectionId">Collection ID</param>
-        /// <returns>
-        ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaCollectionItem" />
-        /// </returns>
-        public async Task<IResult<InstaCollectionItem>> GetCollectionAsync(long collectionId)
+        /// <param name="collectionId">Collection ID to edit</param>
+        /// <param name="name">New name for giving collection (set null if you don't want to change it)</param>
+        /// <param name="photoCoverMediaId">
+        ///     New photo cover media Id (get it from <see cref="InstaMedia.InstaIdentifier"/>) => Optional
+        ///     <para>Important note: media id must be exists in giving collection!</para>
+        /// </param>
+        public async Task<IResult<InstaCollectionItem>> EditCollectionAsync(long collectionId, string name, string photoCoverMediaId = null)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var collectionUri = UriCreator.GetCollectionUri(collectionId);
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, collectionUri, _deviceInfo);
+                var collection = await GetSingleCollection(collectionId, PaginationParameters.MaxPagesToLoad(1));
+                if (collection.Succeeded && string.IsNullOrEmpty(name))
+                    name = collection.Value.CollectionName;
+
+                var editCollectionUri = UriCreator.GetEditCollectionUri(collectionId);
+
+                var data = new JObject
+                {
+                    {"name", name ?? string.Empty},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"_uid", _user.LoggedInUser.Pk},
+                    {"_csrftoken", _user.CsrfToken}
+                };
+                if (!string.IsNullOrEmpty(photoCoverMediaId))
+                    data.Add("cover_media_id", photoCoverMediaId);
+
+                var request =
+                    _httpHelper.GetSignedRequest(HttpMethod.Get, editCollectionUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
                 if (response.StatusCode != HttpStatusCode.OK)
                     return Result.UnExpectedResponse<InstaCollectionItem>(response, json);
+                var newCollectionResponse = JsonConvert.DeserializeObject<InstaCollectionItemResponse>(json);
+                var converter = ConvertersFabric.Instance.GetCollectionConverter(newCollectionResponse);
+                return Result.Success(converter.Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaCollectionItem>(exception);
+            }
+        }
 
-                var collectionsListResponse =
-                    JsonConvert.DeserializeObject<InstaCollectionItemResponse>(json,
-                        new InstaCollectionDataConverter());
+        /// <summary>
+        ///     Get your collection for given collection id
+        /// </summary>
+        /// <param name="collectionId">Collection ID</param>
+        /// <param name="paginationParameters">Pagination parameters: next max id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaCollectionItem" />
+        /// </returns>
+        public async Task<IResult<InstaCollectionItem>> GetSingleCollectionAsync(long collectionId,
+            PaginationParameters paginationParameters)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
+
+                InstaCollectionItem Convert(InstaCollectionItemResponse instaCollectionItemResponse)
+                {
+                    return ConvertersFabric.Instance.GetCollectionConverter(instaCollectionItemResponse).Convert();
+                }
+
+                var collectionList = await GetSingleCollection(collectionId, paginationParameters);
+                if (!collectionList.Succeeded)
+                    return Result.Fail<InstaCollectionItem>(collectionList.Info.Message);
+                
+                var collectionsListResponse = collectionList.Value;
+                paginationParameters.NextMaxId = collectionsListResponse.NextMaxId;
+                var pagesLoaded = 1;
+
+                while (collectionsListResponse.MoreAvailable
+                    && !string.IsNullOrEmpty(collectionsListResponse.NextMaxId)
+                    && pagesLoaded < paginationParameters.MaximumPagesToLoad)
+                {
+                    var nextCollectionList = await GetSingleCollection(collectionId, paginationParameters);
+
+                    if (!nextCollectionList.Succeeded)
+                        return Result.Fail(nextCollectionList.Info, Convert(nextCollectionList.Value));
+
+                    collectionsListResponse.NextMaxId = paginationParameters.NextMaxId = nextCollectionList.Value.NextMaxId;
+                    collectionsListResponse.MoreAvailable = nextCollectionList.Value.MoreAvailable;
+                    collectionsListResponse.AutoLoadMoreEnabled = nextCollectionList.Value.AutoLoadMoreEnabled;
+                    collectionsListResponse.Status = nextCollectionList.Value.Status;
+                    collectionsListResponse.Media.Medias.AddRange(nextCollectionList.Value.Media.Medias);
+                    pagesLoaded++;
+                }
+
+
                 var converter = ConvertersFabric.Instance.GetCollectionConverter(collectionsListResponse);
                 return Result.Success(converter.Convert());
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaCollectionItem>(exception.Message);
+                return Result.Fail<InstaCollectionItem>(exception);
             }
         }
         /// <summary>
         ///     Get your collections
         /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next max id and max amount of pages to load</param>
         /// <returns>
         ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaCollections" />
         /// </returns>
-        public async Task<IResult<InstaCollections>> GetCollectionsAsync()
+        public async Task<IResult<InstaCollections>> GetCollectionsAsync(PaginationParameters paginationParameters)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var collectionUri = UriCreator.GetCollectionsUri();
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, collectionUri, _deviceInfo);
-                var response = await _httpRequestProcessor.SendAsync(request);
-                var json = await response.Content.ReadAsStringAsync();
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
 
-                if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaCollections>(response, json);
+                InstaCollections Convert(InstaCollectionsResponse instaCollectionsResponse)
+                {
+                    return ConvertersFabric.Instance.GetCollectionsConverter(instaCollectionsResponse).Convert();
+                }
 
-                var collectionsResponse = JsonConvert.DeserializeObject<InstaCollectionsResponse>(json);
+                var collections = await GetCollections(paginationParameters);
+
+                if (!collections.Succeeded)
+                    return Result.Fail<InstaCollections>(collections.Info.Message);
+
+                var collectionsResponse = collections.Value;
+                paginationParameters.NextMaxId = collectionsResponse.NextMaxId;
+                var pagesLoaded = 1;
+
+                while (collectionsResponse.MoreAvailable
+                    && !string.IsNullOrEmpty(collectionsResponse.NextMaxId)
+                    && pagesLoaded < paginationParameters.MaximumPagesToLoad)
+                {
+                    var nextCollection = await GetCollections(paginationParameters);
+
+                    if (!nextCollection.Succeeded)
+                        return Result.Fail(nextCollection.Info, Convert(nextCollection.Value));
+
+                    collectionsResponse.NextMaxId = paginationParameters.NextMaxId = nextCollection.Value.NextMaxId;
+                    collectionsResponse.MoreAvailable = nextCollection.Value.MoreAvailable;
+                    collectionsResponse.AutoLoadMoreEnabled = nextCollection.Value.AutoLoadMoreEnabled;
+                    collectionsResponse.Status = nextCollection.Value.Status;
+                    collectionsResponse.Items.AddRange(nextCollection.Value.Items);
+                    pagesLoaded++;
+                }
+
                 var converter = ConvertersFabric.Instance.GetCollectionsConverter(collectionsResponse);
 
                 return Result.Success(converter.Convert());
@@ -218,7 +317,55 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaCollections>(exception.Message);
+                return Result.Fail<InstaCollections>(exception);
+            }
+        }
+
+
+        private async Task<IResult<InstaCollectionsResponse>> GetCollections(PaginationParameters paginationParameters)
+        {
+            try
+            {
+                var collectionUri = UriCreator.GetCollectionsUri(paginationParameters?.NextMaxId);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, collectionUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaCollectionsResponse>(response, json);
+
+                var collectionsResponse = JsonConvert.DeserializeObject<InstaCollectionsResponse>(json);
+                return Result.Success(collectionsResponse);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaCollectionsResponse>(exception);
+            }
+        }
+
+        private async Task<IResult<InstaCollectionItemResponse>> GetSingleCollection(long collectionId,
+            PaginationParameters paginationParameters)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var collectionUri = UriCreator.GetCollectionUri(collectionId, paginationParameters?.NextMaxId);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, collectionUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaCollectionItemResponse>(response, json);
+
+                var collectionsListResponse =
+                    JsonConvert.DeserializeObject<InstaCollectionItemResponse>(json,
+                        new InstaCollectionDataConverter());
+                return Result.Success(collectionsListResponse);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaCollectionItemResponse>(exception);
             }
         }
     }

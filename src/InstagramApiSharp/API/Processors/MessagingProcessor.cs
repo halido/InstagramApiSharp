@@ -53,6 +53,51 @@ namespace InstagramApiSharp.API.Processors
             _httpHelper = httpHelper;
         }
         /// <summary>
+        ///     Add users to group thread
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        /// <param name="userIds">User ids (pk)</param>
+        public async Task<IResult<InstaDirectInboxThread>> AddUserToGroupThreadAsync(string threadId, params long[] userIds)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                if (userIds == null || userIds != null && !userIds.Any())
+                    throw new ArgumentException("UserIds cannot be null or empty.\nAt least one user id require.");
+
+                var instaUri = UriCreator.GetAddUserToDirectThreadUri(threadId);
+
+                var data = new Dictionary<string, string>
+                {
+                    {"use_unified_inbox", "true"},
+                    {"user_ids", $"[{userIds.EncodeList()}]"},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaDirectInboxThread>(response, json);
+                var threadResponse = JsonConvert.DeserializeObject<InstaDirectInboxThreadResponse>(json,
+                             new InstaThreadDataConverter());
+
+                //Reverse for Chat Order
+                threadResponse.Items.Reverse();
+                var converter = ConvertersFabric.Instance.GetDirectThreadConverter(threadResponse);
+
+
+                return Result.Success(converter.Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaDirectInboxThread>(exception);
+            }
+        }
+
+        /// <summary>
         ///     Approve direct pending request
         /// </summary>
         /// <param name="threadIds">Thread id</param>
@@ -89,7 +134,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<bool>(exception.Message);
+                return Result.Fail<bool>(exception);
             }
         }
 
@@ -100,61 +145,194 @@ namespace InstagramApiSharp.API.Processors
         {
             return await DeclineDirectPendingRequests(true);
         }
-
+        /// <summary>
+        ///     Decline direct pending requests
+        /// </summary>
+        /// <param name="threadIds">Thread ids</param>
         public async Task<IResult<bool>> DeclineDirectPendingRequestsAsync(params string[] threadIds)
         {
             return await DeclineDirectPendingRequests(false, threadIds);
         }
 
         /// <summary>
-        ///     Get direct inbox threads for current user asynchronously
+        ///     Delete direct thread
         /// </summary>
-        /// <returns>
-        ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaDirectInboxContainer" />
-        /// </returns>
-        public async Task<IResult<InstaDirectInboxContainer>> GetDirectInboxAsync(string nextOrCursorId = "")
+        /// <param name="threadId">Thread id</param>
+        public async Task<IResult<bool>> DeleteDirectThreadAsync(string threadId)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var directInboxUri = UriCreator.GetDirectInboxUri(nextOrCursorId);
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, directInboxUri, _deviceInfo);
+                var instaUri = UriCreator.GetHideDirectThreadUri(threadId);
+
+                var data = new Dictionary<string, string>
+                {
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"use_unified_inbox", "true"}
+                };
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
-                //Debug.WriteLine(json);
                 if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaDirectInboxContainer>(response, json);
-                var inboxResponse = JsonConvert.DeserializeObject<InstaDirectInboxContainerResponse>(json);
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Delete self message in direct
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        public async Task<IResult<bool>> DeleteSelfMessageAsync(string threadId, string itemId)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetDeleteDirectMessageUri(threadId, itemId);
+
+                var data = new Dictionary<string, string>
+                {
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Get direct inbox threads for current user asynchronously
+        /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaDirectInboxContainer" />
+        /// </returns>
+        public async Task<IResult<InstaDirectInboxContainer>> GetDirectInboxAsync(PaginationParameters paginationParameters)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
+
+                InstaDirectInboxContainer Convert(InstaDirectInboxContainerResponse inboxContainerResponse)
+                {
+                    return ConvertersFabric.Instance.GetDirectInboxConverter(inboxContainerResponse).Convert();
+                }
+
+                var inbox = await GetDirectInbox(paginationParameters.NextMaxId);
+                if (!inbox.Succeeded)
+                    return Result.Fail<InstaDirectInboxContainer>(inbox.Info.Message);
+                var inboxResponse = inbox.Value;
+                paginationParameters.NextMaxId = inboxResponse.Inbox.OldestCursor;
+                var pagesLoaded = 1;
+                while (inboxResponse.Inbox.HasOlder
+                      && !string.IsNullOrEmpty(inboxResponse.Inbox.OldestCursor)
+                      && pagesLoaded < paginationParameters.MaximumPagesToLoad)
+                {
+                    var nextInbox = await GetDirectInbox(inboxResponse.Inbox.OldestCursor);
+
+                    if (!nextInbox.Succeeded)
+                        return Result.Fail(nextInbox.Info, Convert(nextInbox.Value));
+
+                    inboxResponse.Inbox.OldestCursor = paginationParameters.NextMaxId = nextInbox.Value.Inbox.OldestCursor;
+                    inboxResponse.Inbox.HasOlder = nextInbox.Value.Inbox.HasOlder;
+                    inboxResponse.Inbox.BlendedInboxEnabled = nextInbox.Value.Inbox.BlendedInboxEnabled;
+                    inboxResponse.Inbox.UnseenCount = nextInbox.Value.Inbox.UnseenCount;
+                    inboxResponse.Inbox.UnseenCountTs = nextInbox.Value.Inbox.UnseenCountTs;
+                    inboxResponse.Inbox.Threads.AddRange(nextInbox.Value.Inbox.Threads);
+                    pagesLoaded++;
+                }
+
                 return Result.Success(ConvertersFabric.Instance.GetDirectInboxConverter(inboxResponse).Convert());
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaDirectInboxContainer>(exception.Message);
+                return Result.Fail<InstaDirectInboxContainer>(exception);
             }
         }
         /// <summary>
         ///     Get direct inbox thread by its id asynchronously
         /// </summary>
         /// <param name="threadId">Thread id</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <returns>
         ///     <see cref="InstaDirectInboxThread" />
         /// </returns>
-        public async Task<IResult<InstaDirectInboxThread>> GetDirectInboxThreadAsync(string threadId, string nextOrCursorId = "")
+        public async Task<IResult<InstaDirectInboxThread>> GetDirectInboxThreadAsync(string threadId, PaginationParameters paginationParameters)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var directInboxUri = UriCreator.GetDirectInboxThreadUri(threadId, nextOrCursorId);
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, directInboxUri, _deviceInfo);
-                var response = await _httpRequestProcessor.SendAsync(request);
-                var json = await response.Content.ReadAsStringAsync();
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
 
+                var thread = await GetDirectInboxThread(threadId, paginationParameters.NextMaxId);
+                if (!thread.Succeeded)
+                    return Result.Fail<InstaDirectInboxThread>(thread.Info.Message);
+                InstaDirectInboxThread Convert(InstaDirectInboxThreadResponse inboxThreadResponse)
+                {
+                    return ConvertersFabric.Instance.GetDirectThreadConverter(inboxThreadResponse).Convert();
+                }
 
-                if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaDirectInboxThread>(response, json);
-                var threadResponse = JsonConvert.DeserializeObject<InstaDirectInboxThreadResponse>(json,
-                    new InstaThreadDataConverter());
+                var threadResponse = thread.Value;
+                paginationParameters.NextMaxId = threadResponse.OldestCursor;
+                var pagesLoaded = 1;
+
+                while (threadResponse.HasOlder
+                      && !string.IsNullOrEmpty(threadResponse.OldestCursor)
+                      && pagesLoaded < paginationParameters.MaximumPagesToLoad)
+                {
+                    var nextThread = await GetDirectInboxThread(threadResponse.OldestCursor);
+
+                    if (!nextThread.Succeeded)
+                        return Result.Fail(nextThread.Info, Convert(nextThread.Value));
+
+                    threadResponse.OldestCursor = paginationParameters.NextMaxId = nextThread.Value.OldestCursor;
+                    threadResponse.HasOlder = nextThread.Value.HasOlder;
+                    threadResponse.Canonical = nextThread.Value.Canonical;
+                    threadResponse.ExpiringMediaReceiveCount = nextThread.Value.ExpiringMediaReceiveCount;
+                    threadResponse.ExpiringMediaSendCount = nextThread.Value.ExpiringMediaSendCount;
+                    threadResponse.HasNewer = nextThread.Value.HasNewer;
+                    threadResponse.LastActivity = nextThread.Value.LastActivity;
+                    threadResponse.LastSeenAt = nextThread.Value.LastSeenAt;
+                    threadResponse.ReshareReceiveCount = nextThread.Value.ReshareReceiveCount;
+                    threadResponse.ReshareSendCount = nextThread.Value.ReshareSendCount;
+                    threadResponse.Status = nextThread.Value.Status;
+                    threadResponse.Title = nextThread.Value.Title;
+                    threadResponse.IsGroup = nextThread.Value.IsGroup;
+                    threadResponse.IsSpam = nextThread.Value.IsSpam;
+                    threadResponse.IsPin = nextThread.Value.IsPin;
+                    threadResponse.Muted = nextThread.Value.Muted;
+                    threadResponse.PendingScore = nextThread.Value.PendingScore;
+                    threadResponse.Pending = nextThread.Value.Pending;
+                    threadResponse.Users = nextThread.Value.Users;
+                    threadResponse.ValuedRequest = nextThread.Value.ValuedRequest;
+                    threadResponse.VCMuted = nextThread.Value.VCMuted;
+                    threadResponse.VieweId = nextThread.Value.VieweId;
+                    threadResponse.Items.AddRange(nextThread.Value.Items);
+                    pagesLoaded++;
+                }
 
                 //Reverse for Chat Order
                 threadResponse.Items.Reverse();
@@ -166,38 +344,62 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaDirectInboxThread>(exception.Message);
+                return Result.Fail<InstaDirectInboxThread>(exception);
             }
         }
 
         /// <summary>
         ///     Get direct pending inbox threads for current user asynchronously
         /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <returns>
         ///     <see cref="T:InstagramApiSharp.Classes.Models.InstaDirectInboxContainer" />
         /// </returns>
-        public async Task<IResult<InstaDirectInboxContainer>> GetPendingDirectAsync(string nextOrCursorId = "")
+        public async Task<IResult<InstaDirectInboxContainer>> GetPendingDirectAsync(PaginationParameters paginationParameters)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var directInboxUri = UriCreator.GetDirectPendingInboxUri(nextOrCursorId);
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, directInboxUri, _deviceInfo);
-                var response = await _httpRequestProcessor.SendAsync(request);
-                var json = await response.Content.ReadAsStringAsync();
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
 
-                if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaDirectInboxContainer>(response, json);
-                var inboxResponse = JsonConvert.DeserializeObject<InstaDirectInboxContainerResponse>(json);
+                InstaDirectInboxContainer Convert(InstaDirectInboxContainerResponse inboxContainerResponse)
+                {
+                    return ConvertersFabric.Instance.GetDirectInboxConverter(inboxContainerResponse).Convert();
+                }
+
+                var inbox = await GetPendingDirect(paginationParameters.NextMaxId);
+                if (!inbox.Succeeded)
+                    return Result.Fail<InstaDirectInboxContainer>(inbox.Info.Message);
+                var inboxResponse = inbox.Value;
+                paginationParameters.NextMaxId = inboxResponse.Inbox.OldestCursor;
+                var pagesLoaded = 1;
+                while (inboxResponse.Inbox.HasOlder
+                      && !string.IsNullOrEmpty(inboxResponse.Inbox.OldestCursor)
+                      && pagesLoaded < paginationParameters.MaximumPagesToLoad)
+                {
+                    var nextInbox = await GetPendingDirect(inboxResponse.Inbox.OldestCursor);
+
+                    if (!nextInbox.Succeeded)
+                        return Result.Fail(nextInbox.Info, Convert(nextInbox.Value));
+
+                    inboxResponse.Inbox.OldestCursor = paginationParameters.NextMaxId = nextInbox.Value.Inbox.OldestCursor;
+                    inboxResponse.Inbox.HasOlder = nextInbox.Value.Inbox.HasOlder;
+                    inboxResponse.Inbox.Threads.AddRange(nextInbox.Value.Inbox.Threads);
+                    inboxResponse.Inbox.BlendedInboxEnabled = nextInbox.Value.Inbox.BlendedInboxEnabled;
+                    inboxResponse.Inbox.UnseenCount = nextInbox.Value.Inbox.UnseenCount;
+                    inboxResponse.Inbox.UnseenCountTs = nextInbox.Value.Inbox.UnseenCountTs;
+                    pagesLoaded++;
+                }
                 return Result.Success(ConvertersFabric.Instance.GetDirectInboxConverter(inboxResponse).Convert());
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaDirectInboxContainer>(exception.Message);
+                return Result.Fail<InstaDirectInboxContainer>(exception);
             }
         }
-
+        
         /// <summary>
         ///     Get ranked recipients (threads and users) asynchronously
         /// </summary>
@@ -206,11 +408,29 @@ namespace InstagramApiSharp.API.Processors
         /// </returns>
         public async Task<IResult<InstaRecipients>> GetRankedRecipientsAsync()
         {
+            return await GetRankedRecipientsByUsernameAsync(null);
+        }
+
+        /// <summary>
+        ///     Get ranked recipients (threads and users) asynchronously
+        ///     <para>Note: Some recipient has User, some recipient has Thread</para>
+        /// </summary>
+        /// <param name="username">Username to search</param>
+        /// <returns>
+        ///     <see cref="InstaRecipients" />
+        /// </returns>
+        public async Task<IResult<InstaRecipients>> GetRankedRecipientsByUsernameAsync(string username)
+        {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var userUri = UriCreator.GetRankedRecipientsUri();
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, userUri, _deviceInfo);
+                Uri instaUri;
+                if (string.IsNullOrEmpty(username))
+                    instaUri = UriCreator.GetRankedRecipientsUri();
+                else
+                    instaUri = UriCreator.GetRankRecipientsByUserUri(username);
+
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
 
@@ -223,7 +443,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaRecipients>(exception.Message);
+                return Result.Fail<InstaRecipients>(exception);
             }
         }
 
@@ -252,7 +472,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaRecipients>(exception.Message);
+                return Result.Fail<InstaRecipients>(exception);
             }
         }
 
@@ -736,9 +956,49 @@ InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds)
         ///     Share media to direct thread
         /// </summary>
         /// <param name="mediaId">Media id</param>
-        /// <param name="mediaType">Media id</param>
+        /// <param name="mediaType">Media type</param>
+        /// <param name="text">Text to send</param>
         /// <param name="threadIds">Thread ids</param>
-        public async Task<IResult<bool>> ShareMediaToThreadAsync(string mediaId, InstaMediaType mediaType, params string[] threadIds)
+        public async Task<IResult<bool>> ShareMediaToThreadAsync(string mediaId, InstaMediaType mediaType, string text, params string[] threadIds)
+        {
+            try
+            {
+                if (threadIds == null || threadIds != null && !threadIds.Any())
+                    throw new ArgumentException("At least one thread id required");
+
+                return await ShareMedia(mediaId, mediaType, text, threadIds, null);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Share media to user id
+        /// </summary>
+        /// <param name="mediaId">Media id</param>
+        /// <param name="mediaType">Media type</param>
+        /// <param name="text">Text to send</param>
+        /// <param name="userIds">User ids (pk)</param>
+        public async Task<IResult<bool>> ShareMediaToUserAsync(string mediaId, InstaMediaType mediaType, string text, params long[] userIds)
+        {
+            try
+            {
+                if (userIds == null || userIds != null && !userIds.Any())
+                    throw new ArgumentException("At least one user id required");
+
+                return await ShareMedia(mediaId, mediaType, text, null, userIds);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+        private async Task<IResult<bool>> ShareMedia(string mediaId, InstaMediaType mediaType, string text, string[] threadIds, long[] userIds)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
@@ -748,18 +1008,22 @@ InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds)
                 var data = new Dictionary<string, string>
                 {
                     {"action", "send_item"},
-                    {"thread_ids", $"[{threadIds.EncodeList(false)}]"},
                     {"client_context", clientContext},
                     {"media_id", mediaId},
                     {"_csrftoken", _user.CsrfToken},
                     {"unified_broadcast_format", "1"},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"text", text ?? string.Empty}
                 };
+                if (threadIds != null)
+                    data.Add("thread_ids", $"[{threadIds.EncodeList(false)}]");
+                else
+                    data.Add("recipient_users", $"[{userIds.EncodeRecipients()}]");
+
                 var request =
                     _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
-                //Debug.WriteLine(json);
                 if (response.StatusCode != HttpStatusCode.OK)
                     return Result.UnExpectedResponse<bool>(response, json);
                 var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
@@ -955,7 +1219,7 @@ InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds)
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<bool>(exception.Message);
+                return Result.Fail<bool>(exception);
             }
         }
         private async Task<IResult<bool>> SendDirectPhoto(Action<InstaUploaderProgress> progress, string recipients, string threadId, InstaImage image)
@@ -991,14 +1255,16 @@ InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds)
                 var imageContent = new ByteArrayContent(fileBytes);
                 imageContent.Headers.Add("Content-Transfer-Encoding", "binary");
                 imageContent.Headers.Add("Content-Type", "application/octet-stream");
-                var progressContent = new ProgressableStreamContent(imageContent, 4096, progress)
-                {
-                    UploaderProgress = upProgress
-                };
-                requestContent.Add(progressContent, "photo",
+                requestContent.Add(imageContent, "photo",
                     $"direct_temp_photo_{ApiRequestMessage.GenerateUploadId()}.jpg");
+                //var progressContent = new ProgressableStreamContent(requestContent, 4096, progress)
+                //{
+                //    UploaderProgress = upProgress
+                //};
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo);
                 request.Content = requestContent;
+                upProgress.UploadState = InstaUploadState.Uploading;
+                progress?.Invoke(upProgress);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
                 if (response.StatusCode != HttpStatusCode.OK)
@@ -1007,7 +1273,8 @@ InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds)
                     progress?.Invoke(upProgress);
                     return Result.UnExpectedResponse<bool>(response, json);
                 }
-
+                upProgress.UploadState = InstaUploadState.Uploaded;
+                progress?.Invoke(upProgress);
                 var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
                 if (obj.Status.ToLower() == "ok")
                 {
@@ -1026,6 +1293,68 @@ InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds)
                 progress?.Invoke(upProgress);
                 _logger?.LogException(exception);
                 return Result.Fail<bool>(exception);
+            }
+        }
+        private async Task<IResult<InstaDirectInboxContainerResponse>> GetDirectInbox(string maxId = null)
+        {
+            try
+            {
+                var directInboxUri = UriCreator.GetDirectInboxUri(maxId);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, directInboxUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaDirectInboxContainerResponse>(response, json);
+                var inboxResponse = JsonConvert.DeserializeObject<InstaDirectInboxContainerResponse>(json);
+                return Result.Success(inboxResponse);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaDirectInboxContainerResponse>(exception);
+            }
+        }
+        private async Task<IResult<InstaDirectInboxThreadResponse>> GetDirectInboxThread(string threadId, string maxId = null)
+        {
+            try
+            {
+                var directInboxUri = UriCreator.GetDirectInboxThreadUri(threadId, maxId);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, directInboxUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaDirectInboxThreadResponse>(response, json);
+                var threadResponse = JsonConvert.DeserializeObject<InstaDirectInboxThreadResponse>(json,
+                    new InstaThreadDataConverter());
+
+                return Result.Success(threadResponse);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaDirectInboxThreadResponse>(exception);
+            }
+        }
+        private async Task<IResult<InstaDirectInboxContainerResponse>> GetPendingDirect(string maxId = null)
+        {
+            try
+            {
+                var directInboxUri = UriCreator.GetDirectPendingInboxUri(maxId);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, directInboxUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaDirectInboxContainerResponse>(response, json);
+                var inboxResponse = JsonConvert.DeserializeObject<InstaDirectInboxContainerResponse>(json);
+                return Result.Success(inboxResponse);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaDirectInboxContainerResponse>(exception);
             }
         }
     }

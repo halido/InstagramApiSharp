@@ -100,7 +100,7 @@ namespace InstagramApiSharp.Converters
                 threadItem.RavenMedia = converter.Convert();
                 threadItem.RavenSeenUserIds = SourceObject.RavenSeenUserIds;
                 threadItem.RavenViewMode = SourceObject.RavenViewMode;
-                threadItem.RavenReplayChainCount = SourceObject.RavenReplayChainCount;
+                threadItem.RavenReplayChainCount = SourceObject.RavenReplayChainCount ?? 0;
                 threadItem.RavenSeenCount = SourceObject.RavenSeenCount;
                 if (SourceObject.RavenExpiringMediaActionSummary != null)
                 {
@@ -184,6 +184,14 @@ namespace InstagramApiSharp.Converters
                 try
                 {
                     threadItem.FelixShareMedia = ConvertersFabric.Instance.GetSingleMediaConverter(SourceObject.FelixShareMedia.Video).Convert();
+                }
+                catch { }
+            }
+            else if (threadItem.ItemType == InstaDirectThreadItemType.ReelShare && SourceObject.ReelShareMedia != null)
+            {
+                try
+                {
+                    threadItem.ReelShareMedia = ConvertersFabric.Instance.GetReelShareConverter(SourceObject.ReelShareMedia).Convert();
                 }
                 catch { }
             }

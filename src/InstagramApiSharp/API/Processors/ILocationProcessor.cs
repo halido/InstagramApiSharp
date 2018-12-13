@@ -20,6 +20,18 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaLocationFeed>> GetLocationFeedAsync(long locationId, PaginationParameters paginationParameters);
 
         /// <summary>
+        ///     Get location(place) information by external id or facebook places id
+        ///     <para>Get external id from this function: <see cref="ILocationProcessor.SearchLocationAsync(double, double, string)"/></para>
+        ///     <para>Get facebook places id from this function: <see cref="ILocationProcessor.SearchPlacesAsync(double, double, string)(double, double, string)"/></para>
+        /// </summary>
+        /// <param name="externalIdOrFacebookPlacesId">
+        ///     External id or facebook places id of an location/place
+        ///     <para>Get external id from this function: <see cref="ILocationProcessor.SearchLocationAsync(double, double, string)"/></para>
+        ///     <para>Get facebook places id from this function: <see cref="ILocationProcessor.SearchPlacesAsync(double, double, string)(double, double, string)"/></para>
+        /// </param>
+        Task<IResult<InstaPlaceShort>> GetLocationInfoAsync(string externalIdOrFacebookPlacesId);
+
+        /// <summary>
         ///     Searches for specific location by provided geo-data or search query.
         /// </summary>
         /// <param name="latitude">Latitude</param>
@@ -37,5 +49,27 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="desireUsername">Desire username</param>
         /// <param name="count">Maximum user count</param>
         Task<IResult<InstaUserSearchLocation>> SearchUserByLocationAsync(double latitude, double longitude, string desireUsername, int count = 50);
+        /// <summary>
+        ///     Search places in facebook
+        ///     <para>Note: This works for non-facebook accounts too!</para>
+        /// </summary>
+        /// <param name="latitude">Latitude</param>
+        /// <param name="longitude">Longitude</param>
+        /// <returns>
+        ///     <see cref="InstaPlaceList" />
+        /// </returns>
+        Task<IResult<InstaPlaceList>> SearchPlacesAsync(double latitude, double longitude);
+        /// <summary>
+        ///     Search places in facebook
+        ///     <para>Note: This works for non-facebook accounts too!</para>
+        /// </summary>
+        /// <param name="latitude">Latitude</param>
+        /// <param name="longitude">Longitude</param>
+        /// <param name="query">Query to search (city, country or ...)</param>
+        /// <returns>
+        ///     <see cref="InstaPlaceList" />
+        /// </returns>
+        Task<IResult<InstaPlaceList>> SearchPlacesAsync(double latitude, double longitude, string query);
+
     }
 }

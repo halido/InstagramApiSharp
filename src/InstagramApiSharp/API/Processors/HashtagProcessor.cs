@@ -135,7 +135,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaHashtag>(exception.Message);
+                return Result.Fail<InstaHashtag>(exception);
             }
         }
 
@@ -159,7 +159,7 @@ namespace InstagramApiSharp.API.Processors
 
                 var obj = JsonConvert.DeserializeObject<InstaHashtagStoryContainerResponse>(json);
 
-                return Result.Success(ConvertersFabric.Instance.GetHashtagStoryConverter(obj).Convert());
+                return Result.Success(ConvertersFabric.Instance.GetHashtagStoryConverter(obj.Story).Convert());
             }
             catch (Exception exception)
             {
@@ -185,23 +185,28 @@ namespace InstagramApiSharp.API.Processors
                 }
                 var mediaResponse = await GetHashtagRecentMedia(tagname,
                     _user.RankToken ?? Guid.NewGuid().ToString(),
-                    paginationParameters.NextId);
+                    paginationParameters.NextMaxId);
                 if (!mediaResponse.Succeeded)
                     Result.Fail(mediaResponse.Info, Convert(mediaResponse.Value));
 
-                paginationParameters.NextId = mediaResponse.Value.NextMaxId;
+                paginationParameters.NextMaxId = mediaResponse.Value.NextMaxId;
                 paginationParameters.PagesLoaded++;
                 while (mediaResponse.Value.MoreAvailable
-                    && !string.IsNullOrEmpty(paginationParameters.NextId)
+                    && !string.IsNullOrEmpty(paginationParameters.NextMaxId)
                     && paginationParameters.PagesLoaded < paginationParameters.MaximumPagesToLoad)
                 {
                     var moreMedias = await GetHashtagRecentMedia(tagname, _user.RankToken ?? Guid.NewGuid().ToString(),
-                        paginationParameters.NextId, mediaResponse.Value.NextPage, mediaResponse.Value.NextMediaIds);
+                        paginationParameters.NextMaxId, mediaResponse.Value.NextPage, mediaResponse.Value.NextMediaIds);
                     if (!moreMedias.Succeeded)
-                        return Result.Fail(moreMedias.Info, Convert(moreMedias.Value));
+                    {
+                        if (mediaResponse.Value.Sections != null && mediaResponse.Value.Sections.Any())
+                            return Result.Success(Convert(mediaResponse.Value));
+                        else
+                            return Result.Fail(moreMedias.Info, Convert(mediaResponse.Value));
+                    }
 
                     mediaResponse.Value.MoreAvailable = moreMedias.Value.MoreAvailable;
-                    mediaResponse.Value.NextMaxId = paginationParameters.NextId = moreMedias.Value.NextMaxId;
+                    mediaResponse.Value.NextMaxId = paginationParameters.NextMaxId = moreMedias.Value.NextMaxId;
                     mediaResponse.Value.AutoLoadMoreEnabled = moreMedias.Value.AutoLoadMoreEnabled;
                     mediaResponse.Value.NextMediaIds = moreMedias.Value.NextMediaIds;
                     mediaResponse.Value.NextPage = moreMedias.Value.NextPage;
@@ -266,24 +271,24 @@ namespace InstagramApiSharp.API.Processors
                 }
                 var mediaResponse = await GetHashtagTopMedia(tagname,
                     _user.RankToken ?? Guid.NewGuid().ToString(),
-                    paginationParameters.NextId);
+                    paginationParameters.NextMaxId);
 
                 if (!mediaResponse.Succeeded)
                     Result.Fail(mediaResponse.Info, Convert(mediaResponse.Value));
 
-                paginationParameters.NextId = mediaResponse.Value.NextMaxId;
+                paginationParameters.NextMaxId = mediaResponse.Value.NextMaxId;
                 paginationParameters.PagesLoaded++;
                 while (mediaResponse.Value.MoreAvailable
-                    && !string.IsNullOrEmpty(paginationParameters.NextId)
+                    && !string.IsNullOrEmpty(paginationParameters.NextMaxId)
                     && paginationParameters.PagesLoaded < paginationParameters.MaximumPagesToLoad)
                 {
                     var moreMedias = await GetHashtagTopMedia(tagname, _user.RankToken ?? Guid.NewGuid().ToString(),
-                        paginationParameters.NextId, mediaResponse.Value.NextPage);
+                        paginationParameters.NextMaxId, mediaResponse.Value.NextPage);
                     if (!moreMedias.Succeeded)
                         return Result.Fail(moreMedias.Info, Convert(moreMedias.Value));
 
                     mediaResponse.Value.MoreAvailable = moreMedias.Value.MoreAvailable;
-                    mediaResponse.Value.NextMaxId = paginationParameters.NextId = moreMedias.Value.NextMaxId;
+                    mediaResponse.Value.NextMaxId = paginationParameters.NextMaxId = moreMedias.Value.NextMaxId;
                     mediaResponse.Value.AutoLoadMoreEnabled = moreMedias.Value.AutoLoadMoreEnabled;
                     mediaResponse.Value.NextMediaIds = moreMedias.Value.NextMediaIds;
                     mediaResponse.Value.NextPage = moreMedias.Value.NextPage;

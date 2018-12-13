@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -92,7 +94,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaHighlightFeed>(exception.Message);
+                return Result.Fail<InstaHighlightFeed>(exception);
             }
         }
 
@@ -144,6 +146,43 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail<bool>(exception);
             }
         }
+        
+        /// <summary>
+        ///     Get list of users that blocked from seeing your stories
+        /// </summary>
+        public async Task<IResult<InstaUserShortList>> GetBlockedUsersFromStoriesAsync()
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            var list = new InstaUserShortList();
+            try
+            {
+                var instaUri = UriCreator.GetBlockedStoriesUri();
+                var data = new JObject
+                {
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                };
+                var request =
+                    _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaUserShortList>(response, obj.Message, null);
+
+                var usersResponse = JsonConvert.DeserializeObject<InstaUserListShortResponse>(json);
+                list.AddRange(
+                    usersResponse.Items.Select(ConvertersFabric.Instance.GetUserShortConverter)
+                        .Select(converter => converter.Convert()));
+                return Result.Success(list);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex, list);
+            }
+        }
 
         /// <summary>
         ///     Get user highlight feeds by user id (pk)
@@ -167,7 +206,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaHighlightFeeds>(exception.Message);
+                return Result.Fail<InstaHighlightFeeds>(exception);
             }
         }
 
@@ -193,7 +232,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaHighlightShortList>(exception.Message);
+                return Result.Fail<InstaHighlightShortList>(exception);
             }
         }
 
@@ -219,7 +258,7 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"_uid", _user.LoggedInUser.Pk.ToString()},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
-                    {"user_ids", $"[\"{highlightId}\"]"},
+                    {"user_ids", new JArray(highlightId)}
                 };
 
                 var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
@@ -235,7 +274,48 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaHighlightSingleFeed>(exception.Message);
+                return Result.Fail<InstaHighlightSingleFeed>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Get single highlight medias
+        ///     <para>Note: get highlight id from <see cref="IStoryProcessor.GetHighlightFeedsAsync(long)"/></para>
+        /// </summary>
+        /// <param name="highlightId">Highlight id (Get it from <see cref="IStoryProcessor.GetHighlightFeedsAsync(long)"/>)</param>
+        public async Task<IResult<InstaHighlightSingleFeed>> GetHighlightMediasAsync(string highlightId)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                if (string.IsNullOrEmpty(highlightId))
+                    throw new ArgumentNullException("highlightId cannot be null or empty");
+
+                var instaUri = UriCreator.GetReelMediaUri();
+                var data = new JObject
+                {
+                    {InstaApiConstants.SUPPORTED_CAPABALITIES_HEADER, InstaApiConstants.SupportedCapabalities.ToString(Formatting.None)},
+                    {"source", "profile"},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"user_ids", new JArray(highlightId)}
+                };
+
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK) return Result.UnExpectedResponse<InstaHighlightSingleFeed>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaHighlightReelResponse>(json,
+                    new InstaHighlightReelsListDataConverter());
+
+                return Result.Success(ConvertersFabric.Instance.GetHighlightReelConverter(obj).Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaHighlightSingleFeed>(exception);
             }
         }
 
@@ -251,7 +331,7 @@ namespace InstagramApiSharp.API.Processors
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, storyFeedUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine(json);
+                
                 if (response.StatusCode != HttpStatusCode.OK) return Result.Fail("", (InstaStoryFeed) null);
                 var storyFeedResponse = JsonConvert.DeserializeObject<InstaStoryFeedResponse>(json);
                 var instaStoryFeed = ConvertersFabric.Instance.GetStoryFeedConverter(storyFeedResponse).Convert();
@@ -260,22 +340,22 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaStoryFeed>(exception.Message);
+                return Result.Fail<InstaStoryFeed>(exception);
             }
         }
         /// <summary>
         ///     Get story media viewers
         /// </summary>
-        /// <param name="StoryMediaId">Story media id</param>
+        /// <param name="storyMediaId">Story media id</param>
         /// <param name="paginationParameters">Pagination parameters</param>
-        public async Task<IResult<InstaReelStoryMediaViewers>> GetStoryMediaViewers(string StoryMediaId, PaginationParameters paginationParameters)
+        public async Task<IResult<InstaReelStoryMediaViewers>> GetStoryMediaViewersAsync(string storyMediaId, PaginationParameters paginationParameters)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
                 if (paginationParameters.MaximumPagesToLoad > 1)
                     throw new Exception("Not supported");
-                var directInboxUri = new Uri(InstaApiConstants.BASE_INSTAGRAM_API_URL + $"media/{StoryMediaId}/list_reel_media_viewer/?max_id={paginationParameters.NextId}", UriKind.RelativeOrAbsolute);
+                var directInboxUri = UriCreator.GetStoryMediaViewersUri(storyMediaId, paginationParameters?.NextMaxId);
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, directInboxUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
@@ -289,7 +369,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaReelStoryMediaViewers>(exception.Message);
+                return Result.Fail<InstaReelStoryMediaViewers>(exception);
             }
         }
 
@@ -315,7 +395,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaStory>(exception.Message);
+                return Result.Fail<InstaStory>(exception);
             }
         }
         /// <summary>
@@ -342,7 +422,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, feed);
+                return Result.Fail(exception, feed);
             }
         }
 
@@ -357,8 +437,8 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetSeenMediaStoryUri();
-                var storyId = $"{storyMediaId}_{_user.LoggedInUser.Pk}";
-                var dateTimeUnix = ApiRequestMessage.GenerateUploadId();
+                var storyId = $"{storyMediaId}_{storyMediaId.Split('_')[1]}";
+                var dateTimeUnix = DateTime.UtcNow.ToUnixTime();
                 var reel = new JObject
                 {
                     { storyId, new JArray($"{takenAtUnix}_{dateTimeUnix}") }
@@ -368,6 +448,56 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"_uid", _user.LoggedInUser.Pk.ToString()},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"container_module", "feed_timeline"},
+                    {"live_vods_skipped", new JObject()},
+                    {"nuxes_skipped", new JObject()},
+                    {"nuxes", new JObject()},
+                    {"reels", reel},
+                    {"live_vods", new JObject()},
+                    {"reel_media_skipped", new JObject()}
+                };
+                var request =
+                    _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Seen highlight
+        ///     <para>Get media id from <see cref="InstaHighlightFeed.CoverMedia.MediaId"/></para>
+        /// </summary>
+        /// <param name="mediaId">Media identifier (get it from <see cref="InstaHighlightFeed.CoverMedia.MediaId"/>)</param>
+        /// <param name="highlightId">Highlight id</param>
+        /// <param name="takenAtUnix">Taken at unix</param>
+        public async Task<IResult<bool>> MarkHighlightAsSeenAsync(string mediaId, string highlightId, long takenAtUnix)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetSeenMediaStoryUri();
+                var reelId = $"{mediaId}_{highlightId}";
+                var dateTimeUnix = DateTime.UtcNow.ToUnixTime();
+
+                var reel = new JObject
+                {
+                    { reelId, new JArray($"{takenAtUnix}_{dateTimeUnix}") }
+                };
+                var data = new JObject
+                {
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"container_module", "profile"},
                     {"live_vods_skipped", new JObject()},
                     {"nuxes_skipped", new JObject()},
                     {"nuxes", new JObject()},
@@ -431,6 +561,48 @@ namespace InstagramApiSharp.API.Processors
             {
                 _logger?.LogException(exception);
                 return Result.Fail<InstaSharing>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Reply to story
+        ///     <para>Note: Get story media id from <see cref="InstaMedia.InstaIdentifier"/></para>
+        /// </summary>
+        /// <param name="storyMediaId">Media id (get it from <see cref="InstaMedia.InstaIdentifier"/>)</param>
+        /// <param name="userId">Story owner user pk (get it from <see cref="InstaMedia.User.Pk"/>)</param>
+        /// <param name="text">Text to send</param>
+        public async Task<IResult<bool>> ReplyToStoryAsync(string storyMediaId, long userId, string text)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetBroadcastReelShareUri();
+                var clientContext = Guid.NewGuid().ToString();
+                var data = new Dictionary<string, string>
+                {
+                    {"recipient_users", $"[[{userId}]]"},
+                    {"action", "send_item"},
+                    {"client_context", clientContext},
+                    {"media_id", storyMediaId},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"text", text ?? string.Empty},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
+
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
             }
         }
 
@@ -506,11 +678,13 @@ namespace InstagramApiSharp.API.Processors
                 imageContent.Headers.Add("Content-Transfer-Encoding", "binary");
                 imageContent.Headers.Add("Content-Type", "application/octet-stream");
 
-                var progressContent = new ProgressableStreamContent(imageContent, 4096, progress)
-                {
-                    UploaderProgress = upProgress
-                };
-                requestContent.Add(progressContent, "photo", $"pending_media_{ApiRequestMessage.GenerateUploadId()}.jpg");
+                //var progressContent = new ProgressableStreamContent(imageContent, 4096, progress)
+                //{
+                //    UploaderProgress = upProgress
+                //};
+                upProgress.UploadState = InstaUploadState.Uploading;
+                progress?.Invoke(upProgress);
+                requestContent.Add(imageContent, "photo", $"pending_media_{ApiRequestMessage.GenerateUploadId()}.jpg");
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo);
                 request.Content = requestContent;
                 var response = await _httpRequestProcessor.SendAsync(request);
@@ -518,7 +692,9 @@ namespace InstagramApiSharp.API.Processors
 
                 if (response.IsSuccessStatusCode)
                 {
-                    upProgress = progressContent?.UploaderProgress;
+                    upProgress.UploadState = InstaUploadState.Uploaded;
+                    progress?.Invoke(upProgress);
+                    //upProgress = progressContent?.UploaderProgress;
                     return await ConfigureStoryPhotoAsync(progress, upProgress, image, uploadId, caption, uri);
                 }
                 upProgress.UploadState = InstaUploadState.Error;
@@ -530,7 +706,7 @@ namespace InstagramApiSharp.API.Processors
                 upProgress.UploadState = InstaUploadState.Error;
                 progress?.Invoke(upProgress);
                 _logger?.LogException(exception);
-                return Result.Fail<InstaStoryMedia>(exception.Message);
+                return Result.Fail<InstaStoryMedia>(exception);
             }
         }
         /// <summary>
@@ -672,12 +848,14 @@ namespace InstagramApiSharp.API.Processors
                 var videoContent = new ByteArrayContent(videoBytes);
                 videoContent.Headers.Add("Content-Transfer-Encoding", "binary");
                 videoContent.Headers.Add("Content-Type", "application/octet-stream");
-                var progressContent = new ProgressableStreamContent(videoContent, 4096, progress)
-                {
-                    UploaderProgress = upProgress
-                };
+                //var progressContent = new ProgressableStreamContent(videoContent, 4096, progress)
+                //{
+                //    UploaderProgress = upProgress
+                //};
                 request = _httpHelper.GetDefaultRequest(HttpMethod.Post, videoUri, _deviceInfo);
-                request.Content = progressContent;
+                request.Content = videoContent;
+                upProgress.UploadState = InstaUploadState.Uploading;
+                progress?.Invoke(upProgress);
                 var vidExt = Path.GetExtension(video.Video.Uri ?? $"C:\\{13.GenerateRandomString()}.mp4").Replace(".", "").ToLower();
                 if (vidExt == "mov")
                     request.Headers.Add("X-Entity-Type", "video/quicktime");
@@ -696,7 +874,8 @@ namespace InstagramApiSharp.API.Processors
                     progress?.Invoke(upProgress);
                     return Result.UnExpectedResponse<InstaStoryMedia>(response, json);
                 }
-
+                upProgress.UploadState = InstaUploadState.Uploaded;
+                progress?.Invoke(upProgress);
                 var photoUploadParamsObj = new JObject
                 {
                     {"retry_context", "{\"num_step_auto_retry\":0,\"num_reupload\":0,\"num_step_manual_retry\":0}"},
@@ -736,7 +915,7 @@ namespace InstagramApiSharp.API.Processors
 
                 if (response.IsSuccessStatusCode)
                 {
-                    upProgress = progressContent?.UploaderProgress;
+                    //upProgress = progressContent?.UploaderProgress;
                     upProgress.UploadState = InstaUploadState.ThumbnailUploaded;
                     progress?.Invoke(upProgress);
                     return await ConfigureStoryVideoAsync(progress, upProgress, video, uploadId, caption, uri);
@@ -750,7 +929,7 @@ namespace InstagramApiSharp.API.Processors
                 upProgress.UploadState = InstaUploadState.Error;
                 progress?.Invoke(upProgress);
                 _logger?.LogException(exception);
-                return Result.Fail<InstaStoryMedia>(exception.Message);
+                return Result.Fail<InstaStoryMedia>(exception);
             }
         }
 
@@ -853,7 +1032,7 @@ InstaStoryType storyType = InstaStoryType.SelfStory, params string[] threadIds)
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<bool>(exception.Message);
+                return Result.Fail<bool>(exception);
             }
         }
 
@@ -927,7 +1106,7 @@ InstaStoryType storyType = InstaStoryType.SelfStory, params string[] threadIds)
                 upProgress.UploadState = InstaUploadState.Error;
                 progress?.Invoke(upProgress);
                 _logger?.LogException(exception);
-                return Result.Fail<InstaStoryMedia>(exception.Message);
+                return Result.Fail<InstaStoryMedia>(exception);
             }
         }
         /// <summary>
@@ -1034,9 +1213,8 @@ InstaStoryType storyType = InstaStoryType.SelfStory, params string[] threadIds)
                 upProgress.UploadState = InstaUploadState.Error;
                 progress?.Invoke(upProgress);
                 _logger?.LogException(exception);
-                return Result.Fail<InstaStoryMedia>(exception.Message);
+                return Result.Fail<InstaStoryMedia>(exception);
             }
         }
-        /// <s
     }
 }

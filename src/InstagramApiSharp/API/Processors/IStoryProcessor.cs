@@ -34,6 +34,11 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<bool>> DeleteStoryAsync(string storyMediaId, InstaSharingType sharingType = InstaSharingType.Video);
 
         /// <summary>
+        ///     Get list of users that blocked from seeing your stories
+        /// </summary>
+        Task<IResult<InstaUserShortList>> GetBlockedUsersFromStoriesAsync();
+
+        /// <summary>
         ///     Get user highlight feeds by user id (pk)
         /// </summary>
         /// <param name="userId">User id (pk)</param>
@@ -53,15 +58,22 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaHighlightSingleFeed>> GetHighlightsArchiveMediasAsync(string highlightId);
 
         /// <summary>
+        ///     Get single highlight medias
+        ///     <para>Note: get highlight id from <see cref="IStoryProcessor.GetHighlightFeedsAsync(long)"/></para>
+        /// </summary>
+        /// <param name="highlightId">Highlight id (Get it from <see cref="IStoryProcessor.GetHighlightFeedsAsync(long)"/>)</param>
+        Task<IResult<InstaHighlightSingleFeed>> GetHighlightMediasAsync(string highlightId);
+
+        /// <summary>
         ///     Get user story feed (stories from users followed by current user).
         /// </summary>
         Task<IResult<InstaStoryFeed>> GetStoryFeedAsync();
         /// <summary>
         ///     Get story media viewers
         /// </summary>
-        /// <param name="StoryMediaId">Story media id</param>
+        /// <param name="storyMediaId">Story media id</param>
         /// <param name="paginationParameters">Pagination parameters</param>
-        Task<IResult<InstaReelStoryMediaViewers>> GetStoryMediaViewers(string StoryMediaId, PaginationParameters paginationParameters);
+        Task<IResult<InstaReelStoryMediaViewers>> GetStoryMediaViewersAsync(string storyMediaId, PaginationParameters paginationParameters);
 
         /// <summary>
         ///     Get the story by userId
@@ -82,6 +94,15 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<bool>> MarkStoryAsSeenAsync(string storyMediaId, long takenAtUnix);
 
         /// <summary>
+        ///     Seen highlight
+        ///     <para>Get media id from <see cref="InstaHighlightFeed.CoverMedia.MediaId"/></para>
+        /// </summary>
+        /// <param name="mediaId">Media identifier (get it from <see cref="InstaHighlightFeed.CoverMedia.MediaId"/>)</param>
+        /// <param name="highlightId">Highlight id</param>
+        /// <param name="takenAtUnix">Taken at unix</param>
+        Task<IResult<bool>> MarkHighlightAsSeenAsync(string mediaId, string highlightId, long takenAtUnix);
+
+        /// <summary>
         ///     Share story to someone
         /// </summary>
         /// <param name="reelId">Reel id</param>
@@ -89,6 +110,15 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadId">Thread id</param>
         /// <param name="sharingType">Sharing type</param>
         Task<IResult<InstaSharing>> ShareStoryAsync(string reelId, string storyMediaId, string threadId, string text, InstaSharingType sharingType = InstaSharingType.Video);
+
+        /// <summary>
+        ///     Reply to story
+        ///     <para>Note: Get story media id from <see cref="InstaMedia.InstaIdentifier"/></para>
+        /// </summary>
+        /// <param name="storyMediaId">Media id (get it from <see cref="InstaMedia.InstaIdentifier"/>)</param>
+        /// <param name="userId">Story owner user pk (get it from <see cref="InstaMedia.User.Pk"/>)</param>
+        /// <param name="text">Text to send</param>
+        Task<IResult<bool>> ReplyToStoryAsync(string storyMediaId, long userId, string text);
 
         /// <summary>
         ///     Upload story photo

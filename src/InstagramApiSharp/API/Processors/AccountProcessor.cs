@@ -23,6 +23,7 @@ using InstagramApiSharp.Classes.Models;
 using System.Net;
 using InstagramApiSharp.Converters.Json;
 using InstagramApiSharp.Enums;
+using InstagramApiSharp.Classes.ResponseWrappers.Business;
 
 namespace InstagramApiSharp.API.Processors
 {
@@ -93,7 +94,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, (InstaUserShort)null);
+                return Result.Fail<InstaUserShort>(exception);
             }
         }
         /// <summary>
@@ -137,7 +138,7 @@ namespace InstagramApiSharp.API.Processors
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail(exception.Message, (InstaUserShort)null);
+                return Result.Fail<InstaUserShort>(exception);
             }
         }
         /// <summary>
@@ -181,7 +182,7 @@ namespace InstagramApiSharp.API.Processors
             }
             catch (Exception exception)
             {
-                return Result.Fail(exception.Message, false);
+                return Result.Fail(exception, false);
             }
         }
         /// <summary>
@@ -419,22 +420,27 @@ namespace InstagramApiSharp.API.Processors
                 };
                 var imageContent = new ByteArrayContent(pictureBytes);
                 requestContent.Add(imageContent, "profile_pic", $"r{ApiRequestMessage.GenerateUploadId()}.jpg");
-                var progressContent = new ProgressableStreamContent(requestContent, 4096, progress)
-                {
-                    UploaderProgress = upProgress
-                };
+                //var progressContent = new ProgressableStreamContent(requestContent, 4096, progress)
+                //{
+                //    UploaderProgress = upProgress
+                //};
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo);
-                request.Content = progressContent;
+                request.Content = requestContent;
+                upProgress.UploadState = InstaUploadState.Uploading;
+                progress?.Invoke(upProgress);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
-                if (progressContent.UploaderProgress != null)
-                    upProgress = progressContent.UploaderProgress;
+            
+                //if (progressContent.UploaderProgress != null)
+                //    upProgress = progressContent.UploaderProgress;
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
                     upProgress.UploadState = InstaUploadState.Error;
                     progress?.Invoke(upProgress);
                     return Result.UnExpectedResponse<InstaUserEdit>(response, json);
                 }
+                upProgress.UploadState = InstaUploadState.Uploaded;
+                progress?.Invoke(upProgress);
 
                 var obj = JsonConvert.DeserializeObject<InstaUserEditContainer>(json);
                 upProgress.UploadState = InstaUploadState.Completed;
@@ -491,6 +497,15 @@ namespace InstagramApiSharp.API.Processors
                 _logger?.LogException(exception);
                 return Result.Fail<InstaRequestDownloadData>(exception);
             }
+        }
+        /// <summary>
+        ///     Upload nametag image
+        /// </summary>
+        /// <param name="nametagImage">Nametag image</param>
+        public async Task<IResult<InstaMedia>> UploadNametagAsync(InstaImage nametagImage)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            return await _instaApi.HelperProcessor.SendMediaPhotoAsync(null, nametagImage.ConvertToImageUpload(), null, null, true);
         }
         #endregion Profile edit
 
@@ -949,6 +964,42 @@ namespace InstagramApiSharp.API.Processors
             }
         }
         /// <summary>
+        ///     Verify email by verification url
+        /// </summary>
+        /// <param name="verificationUri">Verification url</param>
+        public async Task<IResult<bool>> VerifyEmailByVerificationUriAsync(Uri verificationUri)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                if (verificationUri == null) throw new ArgumentNullException("Verification uri cannot be null");
+
+                var instaUri = UriCreator.GetVerifyEmailUri(verificationUri);
+                var data = new JObject
+                {
+                    { "_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()}
+                };
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                var obj = JsonConvert.DeserializeObject<InstaAccountConfirmEmail>(json);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, obj.Body, null);
+
+                return obj.Title.ToLower() == "thanks" ? Result.Success(true) : Result.Fail(obj.Body, false);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+        /// <summary>
         ///     Verify sms code.
         /// </summary>
         /// <param name="phoneNumber">Phone number (ex: +9891234...)</param>
@@ -1016,8 +1067,124 @@ namespace InstagramApiSharp.API.Processors
         }
         #endregion two factor authentication enable/disable
 
+        /// <summary>
+        ///     Switch to personal account
+        /// </summary>
+        public async Task<IResult<InstaUser>> SwitchToPersonalAccountAsync()
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetConvertToPersonalAccountUri();
+                var data = new JObject
+                {
+                    { "_csrftoken", _user.CsrfToken},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                };
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaUser>(response, json);
 
+                var obj = JsonConvert.DeserializeObject<InstaUserContainerResponse>(json);
+                return Result.Success(ConvertersFabric.Instance.GetUserConverter(obj.User).Convert());
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine(exception.Message);
+                _logger?.LogException(exception);
+                return Result.Fail<InstaUser>(exception);
+            }
+        }
+        
+        /// <summary>
+        ///     Switch to business account
+        /// </summary>
+        public async Task<IResult<InstaBusinessUser>> SwitchToBusinessAccountAsync()
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetConvertToBusinessAccountUri();
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaBusinessUser>(response, json);
 
+                var obj = JsonConvert.DeserializeObject<InstaBusinessUserContainerResponse>(json);
+                return Result.Success(ConvertersFabric.Instance.GetBusinessUserConverter(obj).Convert());
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine(exception.Message);
+                _logger?.LogException(exception);
+                return Result.Fail<InstaBusinessUser>(exception);
+            }
+        }
+        /// <summary>
+        ///    [NOT WORKING] Set contact information for business account
+        /// </summary>
+        /// <param name="categoryId">Category id (Use <see cref="IBusinessProcessor.GetCategoriesAsync"/> to get category id)</param>
+        /// <param name="phoneNumber">Phone number</param>
+        /// <param name="email">Email address</param>
+        public async Task<IResult<InstaBusinessUser>> SetBusinessInfoAsync(string categoryId, string phoneNumber, string email)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                //[NOT WORKING]
+                var instaUri = UriCreator.GetCreateBusinessInfoUri();
+                
+                var publicPhoneContact = new JObject
+                {
+                    {"public_phone_number", phoneNumber},
+                    {"business_contact_method", "CALL"},
+                };
+                var edit = await GetRequestForEditProfileAsync();
+                //{
+                //  "set_public": "false",
+                //  "entry_point": "setting",
+                //  "_csrftoken": "UBPgM6BG1Qr95lO4ofLYpgJXtbVvVnvs",
+                //  "public_phone_contact": "{\"public_phone_number\":\"+989174314006\",\"business_contact_method\":\"CALL\"}",
+                //  "_uid": "7405924766",
+                //  "_uuid": "6324ecb2-e663-4dc8-a3a1-289c699cc876",
+                //  "public_email": "ramtinjokar@yahoo.com",
+                //  "category_id": "2700"
+                //}
+                var pub = edit.Value.IsPrivate;
+                
+                var data = new JObject
+                {
+                    {"set_public", pub.ToString().ToLower()},
+                    {"entry_point", "setting"},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"public_phone_contact", publicPhoneContact.ToString(Formatting.None)},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"public_email", email ?? string.Empty},
+                    {"category_id", categoryId},
+                };
+                var request =
+                    _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaBusinessUser>(response, json);
+                //{"message": "Business details are malformed", "error_identifier": "BUSINESS_ID", "status": "fail"}
+                //{"message": "Can not convert to business, Try again later", "error_identifier": "CANNOT_CONVERT", "status": "fail"}
+                var obj = JsonConvert.DeserializeObject<InstaBusinessUserContainerResponse>(json);
+
+                return Result.Success(ConvertersFabric.Instance.GetBusinessUserConverter(obj).Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaBusinessUser>(exception);
+            }
+        }
 
         #region NOT COMPLETE FUNCTIONS
         //NOT COMPLETE

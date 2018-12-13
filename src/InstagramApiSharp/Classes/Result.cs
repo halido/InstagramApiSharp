@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using InstagramApiSharp.Classes.ResponseWrappers;
 using InstagramApiSharp.Helpers;
 
 namespace InstagramApiSharp.Classes
@@ -83,38 +84,7 @@ namespace InstagramApiSharp.Classes
             else
             {
                 var status = ErrorHandlingHelper.GetBadStatusFromJsonString(json);
-                var responseType = ResponseType.UnExpectedResponse;
-                switch (status.ErrorType)
-                {
-                    case "checkpoint_logged_out":
-                        responseType = ResponseType.CheckPointRequired;
-                        break;
-                    case "login_required":
-                        responseType = ResponseType.LoginRequired;
-                        break;
-                    case "Sorry, too many requests.Please try again later":
-                        responseType = ResponseType.RequestsLimit;
-                        break;
-                    case "sentry_block":
-                        responseType = ResponseType.SentryBlock;
-                        break;
-                    case "inactive user":
-                    case "inactive_user":
-                        responseType = ResponseType.InactiveUser;
-                        break;
-                    case "checkpoint_challenge_required":
-                        responseType = ResponseType.ChallengeRequired;
-                        break;
-                }
-
-                if (!status.IsOk() && status.Message.Contains("wait a few minutes"))
-                    responseType = ResponseType.RequestsLimit;
-
-                if (!string.IsNullOrEmpty(status.Message) && status.Message.Contains("consent_required"))
-                    responseType = ResponseType.ConsentRequired;
-
-                //if (!string.IsNullOrEmpty(status.Message) && status.Message.Contains("challenge_required"))
-                //    responseType = ResponseType.ChallengeRequired;
+                var responseType = GetResponseType(status);
 
                 var resultInfo = new ResultInfo(responseType, status.Message);
                 return new Result<T>(false, default(T), resultInfo);
@@ -132,7 +102,16 @@ namespace InstagramApiSharp.Classes
             else
             {
                 var status = ErrorHandlingHelper.GetBadStatusFromJsonString(json);
-                var responseType = ResponseType.UnExpectedResponse;
+                var responseType = GetResponseType(status);
+
+                var resultInfo = new ResultInfo(responseType, message);
+                return new Result<T>(false, default(T), resultInfo);
+            }
+        }
+        static ResponseType GetResponseType(BadStatusResponse status)
+        {
+            var responseType = ResponseType.UnExpectedResponse;
+            if(!string.IsNullOrWhiteSpace(status.ErrorType))
                 switch (status.ErrorType)
                 {
                     case "checkpoint_logged_out":
@@ -156,12 +135,43 @@ namespace InstagramApiSharp.Classes
                         break;
                 }
 
-                if (!status.IsOk() && status.Message.Contains("wait a few minutes"))
-                    responseType = ResponseType.RequestsLimit;
+            if (!status.IsOk() && status.Message.Contains("wait a few minutes"))
+                responseType = ResponseType.RequestsLimit;
 
-                var resultInfo = new ResultInfo(responseType, message);
-                return new Result<T>(false, default(T), resultInfo);
-            }
+            if (!string.IsNullOrEmpty(status.Message) && status.Message.Contains("consent_required"))
+                responseType = ResponseType.ConsentRequired;
+
+            if (!string.IsNullOrEmpty(status.FeedbackTitle) && status.FeedbackTitle.ToLower().Contains("action blocked"))
+                responseType = ResponseType.ActionBlocked;
+
+            if (!string.IsNullOrEmpty(status.Message) && status.Message.Contains("login_required"))
+                responseType = ResponseType.LoginRequired;
+
+            if (!string.IsNullOrEmpty(status.Message) && status.Message.ToLower().Contains("media not found or unavailable"))
+                responseType = ResponseType.MediaNotFound;
+
+            if (!string.IsNullOrEmpty(status.FeedbackTitle) && status.FeedbackTitle.ToLower().Contains("commenting is Off"))
+                responseType = ResponseType.CommentingIsDisabled;
+
+            if (!string.IsNullOrEmpty(status.Message) && status.Message.ToLower().Contains("already liked"))
+                responseType = ResponseType.AlreadyLiked;
+
+            if (!string.IsNullOrEmpty(status.FeedbackMessage) && status.FeedbackMessage.ToLower().Contains("post you were viewing has been deleted"))
+                responseType = ResponseType.DeletedPost;
+
+            if (!string.IsNullOrEmpty(status.Message) && status.Message.ToLower().Contains("you cannot like this"))
+                responseType = ResponseType.CantLike;
+
+            if (status.Payload != null)
+                if (!string.IsNullOrEmpty(status.Payload.Message) && status.Payload.Message.ToLower().Contains("media is not accessible"))
+                    responseType = ResponseType.DeletedPost;
+
+            if (status.Spam)
+                responseType = ResponseType.Spam;
+
+            //if (!string.IsNullOrEmpty(status.Message) && status.Message.Contains("challenge_required"))
+            //    responseType = ResponseType.ChallengeRequired;
+            return responseType;
         }
     }
 }

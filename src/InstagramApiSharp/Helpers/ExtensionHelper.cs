@@ -43,9 +43,22 @@ namespace InstagramApiSharp
               $"{deviceInfo.AndroidBoardName}{deviceInfo.DeviceModel}");
         }
 
+        public static string EncodeList(this long[] listOfValues, bool appendQuotation = true)
+        {
+            return EncodeList(listOfValues.ToList(), appendQuotation);
+        }
         public static string EncodeList(this string[] listOfValues, bool appendQuotation = true)
         {
             return EncodeList(listOfValues.ToList(), appendQuotation);
+        }
+        public static string EncodeList(this List<long> listOfValues, bool appendQuotation = true)
+        {
+            if (!appendQuotation)
+                return string.Join(",", listOfValues);
+            var list = new List<string>();
+            foreach (var item in listOfValues)
+                list.Add(item.Encode());
+            return string.Join(",", list);
         }
         public static string EncodeList(this List<string> listOfValues, bool appendQuotation = true)
         {
@@ -56,11 +69,26 @@ namespace InstagramApiSharp
                 list.Add(item.Encode());
             return string.Join(",", list);
         }
+        public static string Encode(this long content)
+        {
+            return content.ToString().Encode();
+        }
         public static string Encode(this string content)
         {
             return "\"" + content + "\"";
         }
 
+        public static string EncodeRecipients(this long[] recipients)
+        {
+            return EncodeRecipients(recipients.ToList());
+        }
+        public static string EncodeRecipients(this List<long> recipients)
+        {
+            var list = new List<string>();
+            foreach (var item in recipients)
+                list.Add($"[{item}]");
+            return string.Join(",", list);
+        }
         public static string GetJson(this InstaLocationShort location)
         {
             if (location == null)
@@ -128,5 +156,16 @@ namespace InstagramApiSharp
             System.Diagnostics.Debug.WriteLine(Convert.ToString(obj));
         }
 
+        public static InstaImageUpload ConvertToImageUpload(this InstaImage instaImage, InstaUserTagUpload[] userTags = null)
+        {
+            return new InstaImageUpload
+            {
+                Height = instaImage.Height,
+                ImageBytes = instaImage.ImageBytes,
+                Uri = instaImage.Uri,
+                Width = instaImage.Width,
+                UserTags = userTags?.ToList()
+            };
+        }
     }
 }

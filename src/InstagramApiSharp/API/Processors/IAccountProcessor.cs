@@ -101,6 +101,12 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="name">Name</param>
         /// <param name="phoneNumber">Phone number</param>        
         Task<IResult<bool>> SetNameAndPhoneNumberAsync(string name, string phoneNumber = "");
+        /// <summary>
+        ///     Upload nametag image
+        /// </summary>
+        /// <param name="nametagImage">Nametag image</param>
+        Task<IResult<InstaMedia>> UploadNametagAsync(InstaImage nametagImage);
+
         #endregion Edit profile
 
         #region Story settings
@@ -177,6 +183,12 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaAccountSendSms>> SendSmsCodeAsync(string phoneNumber);
 
         /// <summary>
+        ///     Verify email by verification url
+        /// </summary>
+        /// <param name="verificationUri">Verification url</param>
+        Task<IResult<bool>> VerifyEmailByVerificationUriAsync(Uri verificationUri);
+
+        /// <summary>
         ///     Send two factor enable sms.
         /// </summary>
         /// <param name="phoneNumber">Phone number</param>
@@ -195,8 +207,15 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaAccountVerifySms>> VerifySmsCodeAsync(string phoneNumber, string verificationCode);
         #endregion two factor authentication enable/disable
 
+        /// <summary>
+        ///     Switch to personal account
+        /// </summary>
+        Task<IResult<InstaUser>> SwitchToPersonalAccountAsync();
 
-
+        /// <summary>
+        ///     Switch to business account
+        /// </summary>
+        Task<IResult<InstaBusinessUser>> SwitchToBusinessAccountAsync();
 
         #region NOT COMPLETE FUNCTIONS
         /// <summary>

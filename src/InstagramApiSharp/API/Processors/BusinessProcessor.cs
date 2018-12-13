@@ -25,6 +25,7 @@ using InstagramApiSharp.Converters.Json;
 using InstagramApiSharp.Enums;
 using InstagramApiSharp.Classes.ResponseWrappers.Business;
 using InstagramApiSharp.Classes.Models.Business;
+using System.Linq;
 
 namespace InstagramApiSharp.API.Processors
 {
@@ -102,6 +103,42 @@ namespace InstagramApiSharp.API.Processors
                 _logger?.LogException(exception);
                 return Result.Fail<InstaBusinessUser>(exception);
             }
+        }
+
+        /// <summary>
+        ///     Add users to approval branded whitelist
+        /// </summary>
+        /// <param name="userIdsToAdd">User ids (pk) to add</param>
+        public async Task<IResult<InstaBrandedContent>> AddUserToBrandedWhiteListAsync(params long[] userIdsToAdd)
+        {
+            try
+            {
+                if (userIdsToAdd == null || userIdsToAdd != null && !userIdsToAdd.Any())
+                    return Result.Fail<InstaBrandedContent>("At least one user id is require.");
+
+                return await UpdateBrandedContent(null, userIdsToAdd);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaBrandedContent>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Disable branded content approval
+        /// </summary>
+        public async Task<IResult<InstaBrandedContent>> DisbaleBrandedContentApprovalAsync()
+        {
+            return await UpdateBrandedContent(0);
+        }
+
+        /// <summary>
+        ///     Enable branded content approval
+        /// </summary>
+        public async Task<IResult<InstaBrandedContent>> EnableBrandedContentApprovalAsync()
+        {
+            return await UpdateBrandedContent(1);
         }
 
         /// <summary>
@@ -488,7 +525,7 @@ namespace InstagramApiSharp.API.Processors
         /// <summary>
         ///     Get suggested categories 
         /// </summary>
-        public async Task<IResult<InstaBusinessSugesstedCategoryList>> GetSuggestedCategoriesAsync()
+        public async Task<IResult<InstaBusinessSuggestedCategoryList>> GetSuggestedCategoriesAsync()
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
@@ -520,15 +557,44 @@ namespace InstagramApiSharp.API.Processors
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
                 if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaBusinessSugesstedCategoryList>(response, json);
+                    return Result.UnExpectedResponse<InstaBusinessSuggestedCategoryList>(response, json);
 
-                var obj = JsonConvert.DeserializeObject<InstaBusinessSugesstedCategoryList>(json, new InstaBusinessSuggestedCategoryDataConverter());
+                var obj = JsonConvert.DeserializeObject<InstaBusinessSuggestedCategoryList>(json, new InstaBusinessSuggestedCategoryDataConverter());
                 return Result.Success(obj);
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaBusinessSugesstedCategoryList>(exception);
+                return Result.Fail<InstaBusinessSuggestedCategoryList>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Get branded content approval settings
+        ///     <para>Note: Only approved partners can tag you in branded content when you require approvals.</para>
+        /// </summary>
+        public async Task<IResult<InstaBrandedContent>> GetBrandedContentApprovalAsync()
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetBusinessBrandedSettingsUri();
+
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaBrandedContent>(response, json);
+
+                var obj = JsonConvert.DeserializeObject<InstaBrandedContentResponse>(json);
+                return Result.Success(ConvertersFabric.Instance.GetBrandedContentConverter(obj).Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaBrandedContent>(exception);
             }
         }
 
@@ -577,6 +643,26 @@ namespace InstagramApiSharp.API.Processors
         }
 
         /// <summary>
+        ///     Remove users from approval branded whitelist
+        /// </summary>
+        /// <param name="userIdsToRemove">User ids (pk) to remove</param>
+        public async Task<IResult<InstaBrandedContent>> RemoveUserFromBrandedWhiteListAsync(params long[] userIdsToRemove)
+        {
+            try
+            {
+                if (userIdsToRemove == null || userIdsToRemove != null && !userIdsToRemove.Any())
+                    return Result.Fail<InstaBrandedContent>("At least one user id is require.");
+
+                return await UpdateBrandedContent(null, null, userIdsToRemove);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaBrandedContent>(exception);
+            }
+        }
+
+        /// <summary>
         ///     Search city location for business account
         /// </summary>
         /// <param name="cityOrTown">City/town name</param>
@@ -619,6 +705,39 @@ namespace InstagramApiSharp.API.Processors
             {
                 _logger?.LogException(exception);
                 return Result.Fail<InstaBusinessCityLocationList>(exception);
+            }
+        }
+        
+        /// <summary>
+        ///     Search branded users for adding to your branded whitelist
+        /// </summary>
+        /// <param name="query">Query(name, username or...) to search</param>
+        /// <param name="count">Count</param>
+        public async Task<IResult<InstaDiscoverSearchResult>> SearchBrandedUsersAsync(string query, int count = 85)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                if (count < 10)
+                    count = 10;
+
+                var instaUri = UriCreator.GetBusinessBrandedSearchUserUri(query, count);
+
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaDiscoverSearchResult>(response, json);
+
+                var obj = JsonConvert.DeserializeObject<InstaDiscoverSearchResultResponse>(json);
+                return Result.Success(ConvertersFabric.Instance.GetDiscoverSearchResultConverter(obj).Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaDiscoverSearchResult>(exception);
             }
         }
 
@@ -741,5 +860,54 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail<bool>(exception);
             }
         }
+
+
+        private async Task<IResult<InstaBrandedContent>> UpdateBrandedContent(int? approval = null,
+            long[] usersToAdd = null,
+            long[] usersToRemove = null)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetBusinessBrandedUpdateSettingsUri();
+                var data = new JObject
+                {
+                    {"require_approval", (approval ?? 1).ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
+                var addArray = new JArray();
+                var removeArray = new JArray();
+
+                if (usersToAdd != null && usersToAdd.Any())
+                    foreach (var item in usersToAdd)
+                        addArray.Add($"{item}");
+
+                if (usersToRemove != null && usersToRemove.Any())
+                    foreach (var item in usersToRemove)
+                        removeArray.Add($"{item}");
+
+                data.Add("added_user_ids", addArray);
+                data.Add("removed_user_ids", removeArray);
+
+                var request =
+                    _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaBrandedContent>(response, json);
+
+                var obj = JsonConvert.DeserializeObject<InstaBrandedContentResponse>(json);
+                return Result.Success(ConvertersFabric.Instance.GetBrandedContentConverter(obj).Convert());
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaBrandedContent>(exception);
+            }
+        }
+
     }
 }
