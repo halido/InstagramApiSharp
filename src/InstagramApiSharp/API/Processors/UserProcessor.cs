@@ -1745,8 +1745,9 @@ namespace InstagramApiSharp.API.Processors
             }
         }
 
-        private async Task<IResult<InstaMediaListResponse>> GetUserMedia(long userId,
-                                             PaginationParameters paginationParameters)
+
+        public async Task<IResult<InstaMediaList>> GetUserMediaAsync(long userId,
+                                                    PaginationParameters paginationParameters)
         {
             try
             {
