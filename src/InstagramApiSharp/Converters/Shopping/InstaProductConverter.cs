@@ -34,10 +34,12 @@ namespace InstagramApiSharp.Converters
                 Name = SourceObject.Name,
                 Price = SourceObject.Price,
                 ProductId = SourceObject.ProductId,
-                ReviewStatus = SourceObject.ReviewStatus
+                ReviewStatus = SourceObject.ReviewStatus,
+                CurrentPriceStripped = SourceObject.CurrentPriceStripped,
+                FullPriceStripped = SourceObject.FullPriceStripped,
+                ProductAppealReviewStatus = SourceObject.ProductAppealReviewStatus
             };
-            if (SourceObject.MainImage != null && SourceObject.MainImage.Images != null
-                && SourceObject.MainImage.Images.Candidates.Any())
+            if (SourceObject.MainImage?.Images?.Candidates?.Count > 0)
             {
                 foreach (var image in SourceObject.MainImage.Images.Candidates)
                 {
@@ -48,8 +50,7 @@ namespace InstagramApiSharp.Converters
                     catch { }
                 }
             }
-            if (SourceObject.ThumbnailImage != null && SourceObject.ThumbnailImage.Images != null
-                && SourceObject.ThumbnailImage.Images.Candidates.Any())
+            if (SourceObject.ThumbnailImage?.Images?.Candidates?.Count > 0)
             {
                 foreach (var image in SourceObject.ThumbnailImage.Images.Candidates)
                 {
@@ -60,11 +61,11 @@ namespace InstagramApiSharp.Converters
                     catch { }
                 }
             }
-            if (SourceObject.ProductImages != null && SourceObject.ProductImages.Any())
+            if (SourceObject.ProductImages?.Count > 0)
             {
                 foreach (var productImage in SourceObject.ProductImages)
                 {
-                    if (productImage.Images != null && productImage.Images?.Candidates != null)
+                    if (productImage?.Images?.Candidates?.Count > 0)
                     {
                         foreach (var image in productImage.Images.Candidates)
                         {

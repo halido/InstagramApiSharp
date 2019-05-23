@@ -15,10 +15,12 @@ namespace InstagramApiSharp.Converters
             {
                 Height = SourceObject.Height,
                 IsPinned = System.Convert.ToBoolean(SourceObject.IsPinned),
+                IsHidden = System.Convert.ToBoolean(SourceObject.IsHidden),
                 Rotation = SourceObject.Rotation,
                 Width = SourceObject.Width,
                 X = SourceObject.X,
-                Y = SourceObject.Y
+                Y = SourceObject.Y,
+                Z = SourceObject.Z
             };
             if (SourceObject.Hashtag != null)
                 mention.Hashtag = ConvertersFabric.Instance.GetHashTagConverter(SourceObject.Hashtag).Convert();

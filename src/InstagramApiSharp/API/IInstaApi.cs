@@ -7,7 +7,7 @@
  *                      IRANIAN DEVELOPERS
  *        
  *        
- *                            2018
+ *                            2019
  *  
  *  
  */
@@ -20,6 +20,11 @@ using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Classes.Android.DeviceInfo;
 using InstagramApiSharp.Enums;
 using InstagramApiSharp.Classes.SessionHandlers;
+using System.Net.Http;
+using System.Collections.Generic;
+using System;
+using InstagramApiSharp.API.Versions;
+using InstagramApiSharp.Helpers;
 
 namespace InstagramApiSharp.API
 {
@@ -29,7 +34,14 @@ namespace InstagramApiSharp.API
     public interface IInstaApi
     {
         #region Properties
-
+        /// <summary>
+        ///     Current <see cref="IHttpRequestProcessor"/>
+        /// </summary>
+        IHttpRequestProcessor HttpRequestProcessor { get; }
+        /// <summary>
+        ///     Current HttpClient
+        /// </summary>
+        HttpClient HttpClient { get; }
         /// <summary>
         ///     Indicates whether user authenticated or not
         /// </summary>
@@ -96,6 +108,11 @@ namespace InstagramApiSharp.API
         ///     Shopping and commerce api functions
         /// </summary>
         IShoppingProcessor ShoppingProcessor { get; }
+        /// <summary>
+        ///     Instagram Web api functions.
+        ///     <para>It's related to https://instagram.com/accounts/ </para>
+        /// </summary>
+        IWebProcessor WebProcessor { get; }
 
         /// <summary>
         ///     Session handler
@@ -165,6 +182,25 @@ namespace InstagramApiSharp.API
         #endregion State data
 
         #region Other public functions
+
+        /// <summary>
+        ///     Get current API version info (signature key, api version info, app id)
+        /// </summary>
+        InstaApiVersion GetApiVersionInfo();
+        /// <summary>
+        ///     Get user agent of current <see cref="IInstaApi"/>
+        /// </summary>
+        string GetUserAgent();
+        /// <summary>
+        ///     Set timeout to <see cref="HttpClient"/>
+        /// </summary>
+        /// <param name="timeout">Timeout</param>
+        void SetTimeout(TimeSpan timeout);
+        /// <summary>
+        ///     Set custom HttpClientHandler to be able to use certain features, e.g Proxy and so on
+        /// </summary>
+        /// <param name="handler">HttpClientHandler</param>
+        void UseHttpClientHandler(HttpClientHandler handler);
         /// <summary>
         /// Sets user credentials
         /// </summary>
@@ -191,6 +227,18 @@ namespace InstagramApiSharp.API
         /// </summary>
         string GetAcceptLanguage();
         /// <summary>
+        ///     Get current time zone
+        ///     <para>Returns something like: Asia/Tehran</para>
+        /// </summary>
+        /// <returns>Returns something like: Asia/Tehran</returns>
+        string GetTimezone();
+        /// <summary>
+        ///     Get current time zone offset
+        ///     <para>Returns something like this: 16200</para>
+        /// </summary>
+        /// <returns>Returns something like this: 16200</returns>
+        int GetTimezoneOffset();
+        /// <summary>
         ///     Set delay between requests. Useful when API supposed to be used for mass-bombing.
         /// </summary>
         /// <param name="delay">Timespan delay</param>
@@ -215,12 +263,78 @@ namespace InstagramApiSharp.API
         /// <para>fa-IR for IRAN</para>
         /// </param>
         bool SetAcceptLanguage(string languageCodeAndCountryCode);
-        
+        /// <summary>
+        ///     Set time zone
+        ///     <para>I.e: Asia/Tehran for Iran</para>
+        /// </summary>
+        /// <param name="timezone">
+        ///     time zone
+        ///     <para>I.e: Asia/Tehran for Iran</para>
+        /// </param>
+        void SetTimezone(string timezone);
+        /// <summary>
+        ///     Set time zone offset
+        ///     <para>I.e: 16200 for Iran/Tehran</para>
+        /// </summary>
+        /// <param name="timezoneOffset">
+        ///     timezone offset
+        ///     <para>I.e: 16200 for Iran/Tehran</para>
+        /// </param>
+        void SetTimezoneOffset(int timezoneOffset);
+        /// <summary>
+        ///     Send get request
+        /// </summary>
+        /// <param name="uri">Desire uri (must include https://i.instagram.com/api/v...) </param>
+        Task<IResult<string>> SendGetRequestAsync(System.Uri uri);
+        /// <summary>
+        ///     Send signed post request (include signed signature) 
+        /// </summary>
+        /// <param name="uri">Desire uri (must include https://i.instagram.com/api/v...) </param>
+        /// <param name="data">Data to post</param>
+        Task<IResult<string>> SendSignedPostRequestAsync(System.Uri uri, Dictionary<string, string> data);
+        /// <summary>
+        ///     Send signed post request (include signed signature) 
+        /// </summary>
+        /// <param name="uri">Desire uri (must include https://i.instagram.com/api/v...) </param>
+        /// <param name="data">Data to post</param>
+        Task<IResult<string>> SendSignedPostRequestAsync(System.Uri uri, Newtonsoft.Json.Linq.JObject data);
+        /// <summary>
+        ///     Send post request
+        /// </summary>
+        /// <param name="uri">Desire uri (must include https://i.instagram.com/api/v...) </param>
+        /// <param name="data">Data to post</param>
+        Task<IResult<string>> SendPostRequestAsync(System.Uri uri, Dictionary<string, string> data);
         #endregion Other public functions
 
         #region Authentication, challenge functions
 
         #region Challenge part
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////// Challenge for logged in user /////////////////////////////////
+        
+
+
+        /// <summary>
+        ///     Get challenge data for logged in user
+        ///     <para>This will pop-on, if some suspecious login happend</para>
+        /// </summary>
+        Task<IResult<InstaLoggedInChallengeDataInfo>> GetLoggedInChallengeDataInfoAsync();
+
+        /// <summary>
+        ///     Accept challlenge, it is THIS IS ME feature!!!!
+        ///     <para>You must call <see cref="GetLoggedInChallengeDataInfoAsync"/> first,
+        ///     if you across to <see cref="ResultInfo.ResponseType"/> equals to <see cref="ResponseType.ChallengeRequired"/> while you logged in!</para>
+        /// </summary>
+        Task<IResult<bool>> AcceptChallengeAsync();
+
+
+        /////////////////////////////////// Challenge for logged in user /////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
         /// <summary>
         ///     Get challenge require (checkpoint required) options
         /// </summary>
@@ -253,21 +367,6 @@ namespace InstagramApiSharp.API
         /// <param name="verifyCode">Verification code</param>
         Task<IResult<InstaLoginResult>> VerifyCodeForChallengeRequireAsync(string verifyCode);
         #endregion Challenge part
-
-        /// <summary>
-        ///     Set cookie and html document to verify login information.
-        /// </summary>
-        /// <param name="htmlDocument">Html document source</param>
-        /// <param name="cookies">Cookies from webview or webbrowser control</param>
-        /// <returns>True if logged in, False if not</returns>
-        Task<IResult<bool>> SetCookiesAndHtmlForFacebookLoginAsync(string htmlDocument, string cookies,bool validate = true);
-        /// <summary>
-        ///     Set cookie and web browser response object to verify login information.
-        /// </summary>
-        /// <param name="webBrowserResponse">Web browser response object</param>
-        /// <param name="cookies">Cookies from webview or webbrowser control</param>
-        /// <returns>True if logged in, False if not</returns>
-        Task<IResult<bool>> SetCookiesAndHtmlForFacebookLogin(InstaWebBrowserResponse webBrowserResponse, string cookies, bool validate = true);
         
         /// <summary>
         ///     Check email availability
@@ -317,7 +416,7 @@ namespace InstagramApiSharp.API
         /// <param name="email">Email</param>
         /// <param name="firstName">First name (optional)</param>
         /// <param name="delay">Delay between requests. null = 2.5 seconds</param>
-        Task<IResult<InstaAccountCreation>> CreateNewAccountAsync(string username, string password, string email, string firstName = ""/*, TimeSpan? delay = null*/);        
+        Task<IResult<InstaAccountCreation>> CreateNewAccountAsync(string username, string password, string email, string firstName = ""/*, TimeSpan? delay = null*/);
         /// <summary>
         ///     Login using given credentials asynchronously
         /// </summary>
@@ -328,8 +427,31 @@ namespace InstagramApiSharp.API
         ///     BadPassword --> Password is wrong
         ///     InvalidUser --> User/phone number is wrong
         ///     Exception --> Something wrong happened
+        ///     ChallengeRequired --> You need to pass Instagram challenge
         /// </returns>
         Task<IResult<InstaLoginResult>> LoginAsync(bool isNewLogin = true);
+        /// <summary>
+        ///     Login using cookies
+        ///     <para>Note: You won't be able to change password, if you use <see cref="LoginWithCookiesAsync(string)"/> function for logging in!</para>
+        /// </summary>
+        /// <param name="cookies">Cookies</param>
+        Task<IResult<bool>> LoginWithCookiesAsync(string cookies);
+
+        /// <summary>
+        ///     Login with Facebook access token
+        /// </summary>
+        /// <param name="fbAccessToken">Facebook access token</param>
+        /// <param name="cookiesContainer">Cookies</param>
+        /// <returns>
+        ///     Success --> is succeed
+        ///     TwoFactorRequired --> requires 2FA login.
+        ///     BadPassword --> Password is wrong
+        ///     InvalidUser --> User/phone number is wrong
+        ///     Exception --> Something wrong happened
+        ///     ChallengeRequired --> You need to pass Instagram challenge
+        /// </returns>
+        Task<IResult<InstaLoginResult>> LoginWithFacebookAsync(string fbAccessToken, string cookiesContainer);
+
         /// <summary>
         ///     2-Factor Authentication Login using a verification code
         ///     Before call this method, please run LoginAsync first.

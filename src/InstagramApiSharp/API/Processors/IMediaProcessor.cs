@@ -11,9 +11,16 @@ namespace InstagramApiSharp.API.Processors
     public interface IMediaProcessor
     {
         /// <summary>
+        ///     Add an post to archive list (this will show the post only for you!)
+        /// </summary>
+        /// <param name="mediaId">Media id (<see cref="InstaMedia.InstaIdentifier"/>)</param>
+        /// <returns>Return true if the media is archived</returns>
+        Task<IResult<bool>> ArchiveMediaAsync(string mediaId);
+
+        /// <summary>
         ///     Delete a media (photo, video or album)
         /// </summary>
-        /// <param name="mediaId">The media ID</param>
+        /// <param name="mediaId">Media id (<see cref="InstaMedia.InstaIdentifier"/>)</param>
         /// <param name="mediaType">The type of the media</param>
         /// <returns>Return true if the media is deleted</returns>
         Task<IResult<bool>> DeleteMediaAsync(string mediaId, InstaMediaType mediaType);
@@ -23,10 +30,19 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="mediaId">The media ID</param>
         /// <param name="caption">The new caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
-        /// <param name="userTags">User tags => Optional (ONLY FOR PHOTO POSTS!!!)</param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="userTags">User tags => Optional</param>
         /// <returns>Return true if everything is ok</returns>
         Task<IResult<InstaMedia>> EditMediaAsync(string mediaId, string caption, InstaLocationShort location = null, InstaUserTagUpload[] userTags = null);
+
+        /// <summary>
+        ///     Get archived medias
+        /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="InstaMediaList" />
+        /// </returns>
+        Task<IResult<InstaMediaList>> GetArchivedMediaAsync(PaginationParameters paginationParameters);
 
         /// <summary>
         ///     Get blocked medias
@@ -82,6 +98,20 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="mediaId">Media id</param>
         Task<IResult<bool>> ReportMediaAsync(string mediaId);
+        
+        /// <summary>
+        ///     Save media
+        /// </summary>
+        /// <param name="mediaId">Media id</param>
+        Task<IResult<bool>> SaveMediaAsync(string mediaId);
+
+        /// <summary>
+        /// <summary>
+        ///     Remove an post from archive list (this will show the post for everyone!)
+        /// </summary>
+        /// <param name="mediaId">Media id (<see cref="InstaMedia.InstaIdentifier"/>)</param>
+        /// <returns>Return true if the media is unarchived</returns>
+        Task<IResult<bool>> UnArchiveMediaAsync(string mediaId);
 
         /// <summary>
         ///     Remove like from media (photo or video)
@@ -90,12 +120,18 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<bool>> UnLikeMediaAsync(string mediaId);
 
         /// <summary>
+        ///     Unsave media
+        /// </summary>
+        /// <param name="mediaId">Media id</param>
+        Task<IResult<bool>> UnSaveMediaAsync(string mediaId);
+
+        /// <summary>
         ///     Upload album (videos and photos)
         /// </summary>
         /// <param name="images">Array of photos to upload</param>
         /// <param name="videos">Array of videos to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         Task<IResult<InstaMedia>> UploadAlbumAsync(InstaImageUpload[] images, InstaVideoUpload[] videos, string caption, InstaLocationShort location = null);
 
         /// <summary>
@@ -105,7 +141,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="images">Array of photos to upload</param>
         /// <param name="videos">Array of videos to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         Task<IResult<InstaMedia>> UploadAlbumAsync(Action<InstaUploaderProgress> progress, InstaImageUpload[] images, InstaVideoUpload[] videos, string caption, InstaLocationShort location = null);
 
         /// <summary>
@@ -113,7 +149,7 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="album">Array of photos or videos to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         Task<IResult<InstaMedia>> UploadAlbumAsync(InstaAlbumUpload[] album, string caption, InstaLocationShort location = null);
 
         /// <summary>
@@ -122,7 +158,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="progress">Progress action</param>
         /// <param name="album">Array of photos or videos to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         Task<IResult<InstaMedia>> UploadAlbumAsync(Action<InstaUploaderProgress> progress, InstaAlbumUpload[] album, string caption, InstaLocationShort location = null);
 
         /// <summary>
@@ -130,7 +166,7 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="image">Photo to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         /// <param name="userTags">User tags => Optional</param>
         Task<IResult<InstaMedia>> UploadPhotoAsync(InstaImageUpload image, string caption, InstaLocationShort location = null);
 
@@ -140,24 +176,24 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="progress">Progress action</param>
         /// <param name="image">Photo to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         /// <param name="userTags">User tags => Optional</param>
         Task<IResult<InstaMedia>> UploadPhotoAsync(Action<InstaUploaderProgress> progress, InstaImageUpload image, string caption, InstaLocationShort location = null);
 
         /// <summary>
-        ///     Upload video
+        ///     Upload video [Supports user tags]
         /// </summary>
         /// <param name="video">Video and thumbnail to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         Task<IResult<InstaMedia>> UploadVideoAsync(InstaVideoUpload video, string caption, InstaLocationShort location = null);
         /// <summary>
-        ///     Upload video with progress
+        ///     Upload video with progress [Supports user tags]
         /// </summary>
         /// <param name="progress">Progress action</param>
         /// <param name="video">Video and thumbnail to upload</param>
         /// <param name="caption">Caption</param>
-        /// <param name="location">Location => Optional (get it from <seealso cref="LocationProcessor.SearchLocationAsync"/></param>
+        /// <param name="location">Location => Optional (get it from <seealso cref="ILocationProcessor.SearchLocationAsync"/></param>
         Task<IResult<InstaMedia>> UploadVideoAsync(Action<InstaUploaderProgress> progress, InstaVideoUpload video, string caption, InstaLocationShort location = null);
     }
 }

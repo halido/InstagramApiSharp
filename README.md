@@ -1,20 +1,24 @@
 # InstagramApiSharp ![InstagramApiSharp](http://s8.picofile.com/file/8336601292/insta50x.png)
-An complete Private Instagram Api for .NET (C#, VB.NET).
+A complete Private Instagram API for .NET (C#, VB.NET).
 
-Supports: Create new account, verify account, edit profile, set profile picture and many more...
+Supports almost every features that Instagram app has!
 
-| Target | Branch | Version | Download link |
-| ------ | ------ | ------ | ------ |
-| Nuget | master | v1.1.6.1 | [![NuGet](https://img.shields.io/nuget/v/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) |
+-----
+# This project is not maintained anymore. [#233](https://github.com/ramtinak/InstagramApiSharp/issues/233)
+-----
+| Target | Branch | Version | Download link | Total downloads |
+| ------ | ------ | ------ | ------ | ------ |
+| Nuget | master | v1.4.0.0 | [![NuGet](https://img.shields.io/nuget/v/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) | [![NuGet downloads](https://img.shields.io/nuget/dt/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) |
+| Release | master | v1.4.0.0 | [![Release](http://s9.picofile.com/file/8353468992/releases.PNG)](https://github.com/ramtinak/InstagramApiSharp/releases/latest) | |
 
 ## IMPORTANT NOTE:
 `PaginationParameters` updated, you must use `NextMaxId` instead of using old `NextId`!!!!!
 
 ## Note
-This library is based on [InstaSharper](https://github.com/a-legotin/InstaSharper) with more functions and flexibility.
+This library is based on [InstaSharper](https://github.com/a-legotin/InstaSharper) with more features and new cool things.
 
 ## Install
-Use this library as dll, reference from [NuGet](https://www.nuget.org/packages/InstagramApiSharp/).
+Use this library as dll (download from [release page](https://github.com/ramtinak/InstagramApiSharp/releases)) or reference it from [NuGet](https://www.nuget.org/packages/InstagramApiSharp/).
 
 Nuget package manager command:
 ```
@@ -31,8 +35,11 @@ Note: this library uses [Json.NET v10.0.3 and above](https://www.nuget.org/packa
 | .NET Standard | 2.0 |
 | .NET Core(UWP) | 10.0.10240 |
 
+## Donation
+Paypal: [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9FVAXHZH2MAKW&source=url)
+
 ## Overview
-There's a lot of functions and bug fix me and [NGame1](https://github.com/NGame1) added to this library.
+There are a lot of features and bug fix me and [NGame1](https://github.com/NGame1) and [other contributors](https://github.com/ramtinak/InstagramApiSharp/graphs/contributors) added to this library.
 Check [sample projects](https://github.com/ramtinak/InstagramApiSharp/tree/master/samples) and [wiki pages](https://github.com/ramtinak/InstagramApiSharp/wiki) to see how it's works.
 
 ## Features
@@ -40,7 +47,7 @@ Some of features:
 
 |    |    |    |    |
 | ------ | ------ | ------ | ------ |
-| Login | Login with Facebook | Logout | Create new account email/phone number |
+| Login | Login with cookies | Logout | Create new account email/phone number |
 | Edit profile | Change/remove profile picture | Story settings | Get user explore feed |
 | Get user timeline feed | Get all user media by username | Get media by its id | Get user info by its username |
 | Get current user info | Get tag feed by tag value | Get current user media | Get followers list |
@@ -51,8 +58,8 @@ Some of features:
 | Delete comment | Upload photo | Upload video | Get followings list |
 | Delete media (photo/video/album) | Upload story (photo/video/album) | Change password | Send direct message |
 | Search location | Get location feed | Collection create/get by id/get all/add items | Support challenge required |
-| Upload album (videos/photo) | Highlight support | Share story | Send direct photo/video/ stories/profile/ link/location |
-| IG TV support | Share media to direct thread | Business account support |
+| Upload album (videos/photo) | Highlight support | Share story | Send direct photo/video/ stories/profile/ link/location like/live |
+| IG TV support | Share media to direct thread | Business account support | Share media as story |
 
 ## Usage
 #### Use builder to get Insta API instance:
@@ -74,6 +81,9 @@ var api = InstaApiBuilder.CreateBuilder()
 ```
 ##### Note: every API method has synchronous implementation as well.
 
+## Important note about me (@ramtinak)
+I don't use Instagram at all and I don't like it either, so when you across to an issue or wanna new feature, describe it as much as you can!
+
 ## Contract, warning, note
 Every method returns object IS NOT COMPLETED YET!
 For example:
@@ -85,56 +95,55 @@ Task<IResult<object>>
 Check [Wiki pages](https://github.com/ramtinak/InstagramApiSharp/wiki) for documentation.
 
 ## Version changes
-v1.1.6.1
-- [Bugfix] for GetFollowingRecentActivityFeedAsync pagination [now works correctly]
-- [Add] new UploadAlbumAsync (check [#95 issue](https://github.com/ramtinak/InstagramApiSharp/issues/95))
-- [Add] GetBlockedMediasAsync to MediaProcessor
-- [Add] GetMediaByIdsAsync to MediaProcessor for getting multiple medias
+v1.4.0.0
+- [Add] GetTopicalExploreFeedAsync to FeedProcessor (new explore page)
+	Supports explore categories, ig tv videos
 
-v1.1.6.0
-- [Bugfix] for GetFollowingRecentActivityFeedAsync pagination
-- [Add] InstaImageUpload class (use this for uploading photo/album from now)
-- [Add] User tags support to UploadAlbumAsync (see [album wiki page](https://github.com/ramtinak/InstagramApiSharp/wiki/Upload-album))
-- [Update] UploadPhotoAsync (you should use InstaImageUpload instead! see [photo wiki page](https://github.com/ramtinak/InstagramApiSharp/wiki/Upload-photo))
+v1.3.5.0
+- [Add] UserTag support in InstaVideoUpload (video upload with user tags)
+- [Add] video usertags support for uploading album
 
-v1.1.5.5
-- [Update] Result with more error support
-- [Add] MutualFirst flag added to GetUserFollowersAsync
+v1.3.4.6
+- [Bugfix] for slider emoji in story upload
+- [Add] CropWidth and CropHeight as parameter for CreateHighlightFeedAsync (thx to [@szokeptr](https://github.com/szokeptr))
+- [Add] LastPermanentItem property to InstaDirectInboxThread by [@estgold](https://github.com/estgold)
+- [Add] RelatedHashtags to GetTopHashtagMediaListAsync 
+- [Update] GetTopHashtagMediaListAsync
+- [Update] GetRecentHashtagMediaListAsync
+- [Update] api version to 86.0.0.24.87 (it's default now)
 
-v1.1.5.2
-- [Add] ability to request verification code again (thx to [@sh2ezo](https://github.com/sh2ezo) for PR)
-- [Support] NetStandard 1.3
-- [Update] InstaRecentActivityConverter
-- [Add] PaginationParameters support to GetCollectionsAsync
-- [Rename] GetCollectionAsync to GetSingleCollectionAsync
-- [Add] PaginationParameters support to GetSingleCollectionAsync
-- [Add] GetLocationInfoAdd GetLocationInfo to LocationProcessor to LocationProcessor
-- [Add] EditCollectionAsync to CollectionProcessor
+v1.3.4.5
+- [Add] GetLoggedInChallengeDataInfoAsync to IInstaApi
+- [Add] AcceptChallengeAsync to IInstaApi [THIS IS ME feature]  (check [#204](https://github.com/ramtinak/InstagramApiSharp/issues/#204))
+- [Bugfix] for highlights media converter
+- [Bugfix] for challenge response for logged in user
 
-v1.1.5.1
-- [Add] to VerifyEmailByVerificationUriAsync to AccountProcessor
-- [Add] DeleteDirectThreadAsync to MessagingProcessor
-- [Add] DeleteSelfMessageAsync to MessagingProcessor
+v1.3.4.4
+- [Bugfix] for login with 2FA enabled (thx to [@vivan-snapretail](https://github.com/vivan-snapretail) for report)
+- [Add] Dashmanifest property for postlive
+- [Add] Support Uploading Story Countdown in InstaStoryUploadOptions
+- [Add] GetCountdownsStoriesAsync to StoryProcessor
+- [Add] FollowCountdownStoryAsync to StoryProcessor
+- [Add] UnFollowCountdownStoryAsync to StoryProcessor
 
-v1.1.5.0
-- [Bugfix] for GetUserAsync
-- [Add] user tags support to UploadPhotoAsync
-- [Add] user tags edit to EditMediaAsync
-- [Add] Product tags to InstaMedia
-- [Add] user tag support to InstaCarouselItem
-- [Add] ShoppingProcessor
-- [Add] GetUserShoppableMediaAsync to ShoppingProcessor and UserProcessor
-- [Add] GetProductInfoAsync to ShoppingProcessor
-- [Add] MarkUserAsOverageAsync to UserProcessor
-- [Add] FavoriteUserAsync and UnFavoriteUserAsync to UserProcessor
-- [Add] FavoriteUserStoriesAsync and UnFavoriteUserStoriesAsync to UserProcessor
-- [Add] MuteUserMediaAsync and UnMuteUserMediaAsync to UserProcessor
-- [Add] HideMyStoryFromUserAsync and UnHideMyStoryFromUserAsync to UserProcessor
-- [Add] MuteFriendStoryAsync and UnMuteFriendStoryAsync to UserProcessor
-- [Add] GetBlockedStorySharingUsersStory to StoryProcessor
+v1.3.4.3
+- [Bugfix] for BusinessProcessor.GetStatisticsAsync [ by [@estgold](https://github.com/estgold) ]
+- [Bugfix] for GetStoryMediaViewersAsync (thx to [@tommasoceschia](https://github.com/tommasoceschia) for report)
+- [Add] HttpRequestProcessor to IInstaApi
+- [Add] GetApiVersionInfo to IInstaApi
+- [Add] GetUserAgent to IInstaApi
 
-v1.1.4.4
-- [Bugfix] for phone number/email login (now you can login with phone/email to as well) (spectial thanks to [@learn-itnow](https://github.com/learn-itnow) for his help)
+v1.3.4.2
+- [Bugfix] for InstaRecentActivityConverter timestamp for different cultures [ by [@estgold](https://github.com/estgold) ]
+- [Bugfix] for media products (thx to [@tommasoceschia](https://github.com/tommasoceschia) for report)
+
+v1.3.4.1
+- [Bugfix] for UploadStoryPhotoWithUrlAsync
+- [Bugfix] for ProductTags (thx to [@tommasoceschia](https://github.com/tommasoceschia) for report)
+- [Add] some new properties to InstaProduct class
+- [Add] support for Questions in InstaStoryUploadOptions
+- [Update] facebook login function
+- [Update] story slider
 
 [Version changes](https://github.com/ramtinak/InstagramApiSharp/wiki/Version-changes) page
 
@@ -146,6 +155,10 @@ You can download source code or app from [InstaPost](https://github.com/ramtinak
 ![InstaPost](http://s9.picofile.com/file/8335529176/sc1.PNG)
 ![InstaPost](http://s8.picofile.com/file/8335529250/sc5.PNG)
 
+Note: [InstaPost](https://github.com/ramtinak/InstaPost/) app is just an old example that uses [InstagramApiSharp v1.1.5.2](https://www.nuget.org/packages/InstagramApiSharp/1.1.5.2) which is very old version!!! 
+Some of codes may not working well or even deprecated in new [InstagramApiSharp](https://github.com/ramtinak/InstagramApiSharp) versions.
+I suggest you to update library to the latest [nuget version](https://www.nuget.org/packages/InstagramApiSharp) or use latest [release package](https://github.com/ramtinak/InstagramApiSharp/releases) and update [InstaPost](https://github.com/ramtinak/InstaPost/) codes that is not working or deprecated
+
 ## Language
 You can ask questions or report issues in Persian or English language.
 I can't answer to other languages, because I don't understand them.
@@ -156,13 +169,12 @@ Do whatever you want to do! Except changing library name!!!!
 ## Terms and conditions
 - Use this Api at your own risk.
 
-## Donation
-No need to donate.
-
 ## Contribute
 Feel free to contribute and submit pull requests.
 
 ## Thanks
+Special thanks to [all contributors](https://github.com/ramtinak/InstagramApiSharp/graphs/contributors).
+
 Special thanks to [mgp25](https://github.com/mgp25) and his [php wrapper](https://github.com/mgp25/Instagram-API/).
 
 ## Legal
@@ -177,4 +189,4 @@ This code is in no way affiliated with, authorized, maintained, sponsored or end
 
 
 
-Iranian developers - (c) 2018 | Tabestan & Paeez 1397.
+Iranian developers - (c) 2019 | Bahar 1398.

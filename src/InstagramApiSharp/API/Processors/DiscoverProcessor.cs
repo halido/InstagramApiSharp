@@ -74,6 +74,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
                 return obj.Status == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -98,6 +103,11 @@ namespace InstagramApiSharp.API.Processors
 
                 var obj = JsonConvert.DeserializeObject<InstaUserChainingContainerResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetUserChainingListConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaUserChainingList), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -124,12 +134,52 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaDiscoverRecentSearchesResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetDiscoverRecentSearchesConverter(obj).Convert());
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaDiscoverRecentSearches), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
                 return Result.Fail<InstaDiscoverRecentSearches>(exception);
             }
         }
+
+        /// <summary>
+        /// Get top searches
+        /// </summary>
+        /// <param name="querry">querry string of the search</param>
+        /// <param name="searchType">Search type(only blended and users works)</param>
+        /// <param name="timezone_offset">Timezone offset of the search region (GMT Offset * 60 * 60 - Like Tehran GMT +3:30 = 3.5* 60*60 = 12600)</param>
+        /// <returns></returns>
+        public async Task<IResult<InstaDiscoverTopSearches>> GetTopSearchesAsync(string querry = "", InstaDiscoverSearchType searchType = InstaDiscoverSearchType.Users, int timezone_offset = 12600)
+        {
+            try
+            {
+                var instaUri = UriCreator.GetTopSearchUri(_user.RankToken, querry, searchType, timezone_offset);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaDiscoverTopSearches>(response, json);
+
+                var obj = JsonConvert.DeserializeObject<InstaDiscoverTopSearchesResponse>(json);
+                return Result.Success(ConvertersFabric.Instance.GetDiscoverTopSearchesConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaDiscoverTopSearches), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaDiscoverTopSearches>(exception);
+            }
+        }
+
         /// <summary>
         ///     Get suggested searches
         /// </summary>
@@ -149,6 +199,11 @@ namespace InstagramApiSharp.API.Processors
 
                 var obj = JsonConvert.DeserializeObject<InstaDiscoverSuggestedSearchesResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetDiscoverSuggestedSearchesConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaDiscoverSuggestedSearches), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -176,6 +231,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaDiscoverSearchResultResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetDiscoverSearchResultConverter(obj).Convert());
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaDiscoverSearchResult), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -196,6 +256,11 @@ namespace InstagramApiSharp.API.Processors
                 var contacts = new InstaContactList();
                 contacts.AddRange(instaContacts);
                 return await SyncContactsAsync(contacts);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaContactUserList), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -233,6 +298,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaContactUserListResponse>(json);
 
                 return Result.Success(ConvertersFabric.Instance.GetUserContactListConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaContactUserList), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -276,6 +346,11 @@ namespace InstagramApiSharp.API.Processors
                     return Result.UnExpectedResponse<InstaDefaultResponse>(response, json);
                 var obj = JsonConvert.DeserializeObject<InstaDefaultResponse>(json);
                 return Result.Success(obj);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaDefaultResponse), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {

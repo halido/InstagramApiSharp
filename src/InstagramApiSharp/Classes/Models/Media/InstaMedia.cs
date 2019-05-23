@@ -70,7 +70,7 @@ namespace InstagramApiSharp.Classes.Models
 
 
         public bool CommentLikesEnabled { get; set; }
-        
+
         public bool CommentThreadingEnabled { get; set; }
 
         public bool HasMoreComments { get; set; }
@@ -85,6 +85,8 @@ namespace InstagramApiSharp.Classes.Models
 
         public bool CanViewerSave { get; set; }
 
+        private bool _hasviewersaved;
+        public bool HasViewerSaved { get => _hasviewersaved; set { _hasviewersaved = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("HasViewerSaved")); } }
 
         public string Title { get; set; }
 
@@ -97,5 +99,7 @@ namespace InstagramApiSharp.Classes.Models
         public double VideoDuration { get; set; }
 
         public List<InstaProductTag> ProductTags { get; set; } = new List<InstaProductTag>();
+
+        public bool DirectReplyToAuthorEnabled { get; set; }
     }
 }

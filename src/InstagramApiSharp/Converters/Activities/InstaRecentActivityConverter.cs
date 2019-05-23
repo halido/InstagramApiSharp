@@ -1,4 +1,5 @@
-﻿using InstagramApiSharp.Classes.Models;
+﻿using System.Globalization;
+using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Classes.ResponseWrappers;
 using InstagramApiSharp.Helpers;
 
@@ -18,7 +19,8 @@ namespace InstagramApiSharp.Converters
                 ProfileId = SourceObject.Args.ProfileId,
                 ProfileImage = SourceObject.Args.ProfileImage,
                 Text = SourceObject.Args.Text,
-                TimeStamp = DateTimeHelper.UnixTimestampToDateTime(SourceObject.Args.TimeStamp)
+                RichText = SourceObject.Args.RichText,
+                TimeStamp = DateTimeHelper.UnixTimestampToDateTime((long)System.Convert.ToDouble(SourceObject.Args.TimeStamp, new NumberFormatInfo { NumberDecimalSeparator = "." }))
             };
             if (SourceObject.Args.Links != null)
                 foreach (var instaLinkResponse in SourceObject.Args.Links)

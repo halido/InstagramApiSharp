@@ -18,10 +18,22 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaFriendshipStatus>> AcceptFriendshipRequestAsync(long userId);
 
         /// <summary>
+        ///     Add new best friend (besties)
+        /// </summary>
+        /// <param name="userIds">User ids (pk) to add</param>
+        Task<IResult<InstaFriendshipShortStatusList>> AddBestFriendsAsync(params long[] userIds);
+
+        /// <summary>
         ///     Block user
         /// </summary>
         /// <param name="userId">User id</param>
-        Task<IResult<InstaFriendshipStatus>> BlockUserAsync(long userId);
+        Task<IResult<InstaFriendshipFullStatus>> BlockUserAsync(long userId);
+
+        /// <summary>
+        ///     Delete an user from your best friend (besties) lists
+        /// </summary>
+        /// <param name="userIds">User ids (pk) to add</param>
+        Task<IResult<InstaFriendshipShortStatusList>> DeleteBestFriendsAsync(params long[] userIds);
 
         /// <summary>
         ///     Favorite user (user must be in your following list)
@@ -39,16 +51,34 @@ namespace InstagramApiSharp.API.Processors
         ///     Follow user
         /// </summary>
         /// <param name="userId">User id</param>
-        Task<IResult<InstaFriendshipStatus>> FollowUserAsync(long userId);
+        Task<IResult<InstaFriendshipFullStatus>> FollowUserAsync(long userId);
+
+        /// <summary>
+        ///     Get self best friends (besties)
+        /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="InstaUserShortList" />
+        /// </returns>
+        Task<IResult<InstaUserShortList>> GetBestFriendsAsync(PaginationParameters paginationParameters);
+
+        /// <summary>
+        ///     Get best friends (besties) suggestions
+        /// </summary>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="InstaUserShortList" />
+        /// </returns>
+        Task<IResult<InstaUserShortList>> GetBestFriendsSuggestionsAsync(PaginationParameters paginationParameters);
 
         /// <summary>
         ///     Get blocked users
         /// </summary>
         /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <returns>
-        ///     <see cref="InstaUserShortList" />
+        ///     <see cref="InstaBlockedUsers" />
         /// </returns>
-        Task<IResult<InstaUserShortList>> GetBlockedUsersAsync(PaginationParameters paginationParameters);
+        Task<IResult<InstaBlockedUsers>> GetBlockedUsersAsync(PaginationParameters paginationParameters);
 
         /// <summary>
         ///     Get currently logged in user info asynchronously
@@ -78,9 +108,9 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="userId">User identifier (PK)</param>
         /// <returns>
-        ///     <see cref="InstaFriendshipStatus" />
+        ///     <see cref="InstaStoryFriendshipStatus" />
         /// </returns>
-        Task<IResult<InstaFriendshipStatus>> GetFriendshipStatusAsync(long userId);
+        Task<IResult<InstaStoryFriendshipStatus>> GetFriendshipStatusAsync(long userId);
         /// <summary>
         ///     Get friendship status for multiple user ids.
         /// </summary>
@@ -146,6 +176,18 @@ namespace InstagramApiSharp.API.Processors
             PaginationParameters paginationParameters, string searchQuery = "", bool mutualsfirst = false);
 
         /// <summary>
+        ///     Get followers list by user id(pk) asynchronously
+        /// </summary>
+        /// <param name="userId">User id(pk)</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <param name="searchQuery">Search string to locate specific followers</param>
+        /// <returns>
+        ///     <see cref="InstaUserShortList" />
+        /// </returns>
+        Task<IResult<InstaUserShortList>> GetUserFollowersByIdAsync(long userId,
+            PaginationParameters paginationParameters, string searchQuery = "", bool mutualsfirst = false);
+
+        /// <summary>
         ///     Get following list by username asynchronously
         /// </summary>
         /// <param name="username">Username</param>
@@ -155,6 +197,18 @@ namespace InstagramApiSharp.API.Processors
         ///     <see cref="InstaUserShortList" />
         /// </returns>
         Task<IResult<InstaUserShortList>> GetUserFollowingAsync(string username,
+            PaginationParameters paginationParameters, string searchQuery = "");
+
+        /// <summary>
+        ///     Get following list by user id(pk) asynchronously
+        /// </summary>
+        /// <param name="userId">User id(pk)</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <param name="searchQuery">Search string to locate specific followings</param>
+        /// <returns>
+        ///     <see cref="InstaUserShortList" />
+        /// </returns>
+        Task<IResult<InstaUserShortList>> GetUserFollowingByIdAsync(long userId,
             PaginationParameters paginationParameters, string searchQuery = "");
 
         /// <summary>
@@ -180,7 +234,17 @@ namespace InstagramApiSharp.API.Processors
         ///     <see cref="InstaMediaList" />
         /// </returns>
         Task<IResult<InstaMediaList>> GetUserMediaAsync(string username, PaginationParameters paginationParameters);
-        
+
+        /// <summary>
+        ///     Get all user media by user id (pk) asynchronously
+        /// </summary>
+        /// <param name="userId">User id (pk)</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="InstaMediaList" />
+        /// </returns>
+        Task<IResult<InstaMediaList>> GetUserMediaByIdAsync(long userId, PaginationParameters paginationParameters);
+
         /// <summary>
         ///     Get all user shoppable media by username
         /// </summary>
@@ -215,13 +279,13 @@ namespace InstagramApiSharp.API.Processors
         ///     Ignore user friendship requst.
         /// </summary>
         /// <param name="userId">User id (pk)</param>
-        Task<IResult<InstaFriendshipStatus>> IgnoreFriendshipRequestAsync(long userId);
+        Task<IResult<InstaFriendshipFullStatus>> IgnoreFriendshipRequestAsync(long userId);
 
         /// <summary>
         ///     Hide my story from specific user
         /// </summary>
         /// <param name="userId">User id</param>
-        Task<IResult<InstaFriendshipStatus>> HideMyStoryFromUserAsync(long userId);
+        Task<IResult<InstaStoryFriendshipStatus>> HideMyStoryFromUserAsync(long userId);
 
         /// <summary>
         ///     Mark user as overage
@@ -233,14 +297,14 @@ namespace InstagramApiSharp.API.Processors
         ///     Mute friend's stories, so you won't see their stories in latest stories tab
         /// </summary>
         /// <param name="userId">User id (pk)</param>
-        Task<IResult<InstaFriendshipStatus>> MuteFriendStoryAsync(long userId);
+        Task<IResult<InstaStoryFriendshipStatus>> MuteFriendStoryAsync(long userId);
 
         /// <summary>
         ///     Mute user media (story, post or all)
         /// </summary>
         /// <param name="userId">User id (pk)</param>
         /// <param name="unmuteOption">Unmute option</param>
-        Task<IResult<InstaFriendshipStatus>> MuteUserMediaAsync(long userId, InstaMuteOption muteOption);
+        Task<IResult<InstaStoryFriendshipStatus>> MuteUserMediaAsync(long userId, InstaMuteOption muteOption);
 
         /// <summary>
         ///     Report user
@@ -252,7 +316,7 @@ namespace InstagramApiSharp.API.Processors
         ///     Stop block user
         /// </summary>
         /// <param name="userId">User id</param>
-        Task<IResult<InstaFriendshipStatus>> UnBlockUserAsync(long userId);
+        Task<IResult<InstaFriendshipFullStatus>> UnBlockUserAsync(long userId);
 
         /// <summary>
         ///     Unfavorite user (user must be in your following list)
@@ -270,26 +334,26 @@ namespace InstagramApiSharp.API.Processors
         ///     Stop follow user
         /// </summary>
         /// <param name="userId">User id</param>
-        Task<IResult<InstaFriendshipStatus>> UnFollowUserAsync(long userId);
+        Task<IResult<InstaFriendshipFullStatus>> UnFollowUserAsync(long userId);
         
         /// <summary>
         ///     Unhide my story from specific user
         /// </summary>
         /// <param name="userId">User id</param>
-        Task<IResult<InstaFriendshipStatus>> UnHideMyStoryFromUserAsync(long userId);
+        Task<IResult<InstaStoryFriendshipStatus>> UnHideMyStoryFromUserAsync(long userId);
 
         /// <summary>
         ///     Unmute friend's stories, so you will be able to see their stories in latest stories tab once again
         /// </summary>
         /// <param name="userId">User id (pk)</param>
-        Task<IResult<InstaFriendshipStatus>> UnMuteFriendStoryAsync(long userId);
+        Task<IResult<InstaStoryFriendshipStatus>> UnMuteFriendStoryAsync(long userId);
 
         /// <summary>
         ///     Unmute user media (story, post or all)
         /// </summary>
         /// <param name="userId">User id (pk)</param>
         /// <param name="unmuteOption">Unmute option</param>
-        Task<IResult<InstaFriendshipStatus>> UnMuteUserMediaAsync(long userId, InstaMuteOption unmuteOption);
+        Task<IResult<InstaStoryFriendshipStatus>> UnMuteUserMediaAsync(long userId, InstaMuteOption unmuteOption);
 
         /// <summary>
         ///     Remove an follower from your followers

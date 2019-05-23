@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace InstagramApiSharp
 {
@@ -19,6 +20,15 @@ namespace InstagramApiSharp
         public string NextMinId { get; set; } = string.Empty;
         public int MaximumPagesToLoad { get; private set; }
         public int PagesLoaded { get; set; } = 1;
+        /// <summary>
+        ///     Only for location and hashtag feeds 
+        /// </summary>
+        public int? NextPage { get; set; }
+        public List<long> ExcludeList { get; set; } = new List<long>();
+        /// <summary>
+        ///     Only for location and hashtag feeds 
+        /// </summary>
+        public List<long> NextMediaIds { get; set; }
 
         public static PaginationParameters Empty => MaxPagesToLoad(int.MaxValue);
 
@@ -26,15 +36,6 @@ namespace InstagramApiSharp
         {
             return new PaginationParameters {MaximumPagesToLoad = maxPagesToLoad};
         }
-
-        [Obsolete("StartFromId is deprecated. Please use PaginationParameters.StartFromMaxId instead.")]
-        public PaginationParameters StartFromId(string maxId)
-        {
-            NextMaxId = maxId;
-            NextMinId = null;
-            return this;
-        }
-
 
         public PaginationParameters StartFromMaxId(string maxId)
         {

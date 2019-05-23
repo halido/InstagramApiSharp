@@ -73,6 +73,20 @@ namespace InstagramApiSharp.API.Processors
         }
 
         /// <summary>
+        ///     Get all user shoppable media by user id (pk)
+        /// </summary>
+        /// <param name="userId">User id (pk)</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="InstaMediaList" />
+        /// </returns>
+        public async Task<IResult<InstaMediaList>> GetUserShoppableMediaByIdAsync(long userId,
+            PaginationParameters paginationParameters)
+        {
+            return await GetUserShoppableMedia(userId, paginationParameters);
+        }
+
+        /// <summary>
         ///     Get product info
         /// </summary>
         /// <param name="productId">Product id (get it from <see cref="InstaProduct.ProductId"/> )</param>
@@ -94,6 +108,11 @@ namespace InstagramApiSharp.API.Processors
                 var converted = ConvertersFabric.Instance.GetProductInfoConverter(productInfoResponse).Convert();
 
                 return Result.Success(converted);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaProductInfo), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -134,6 +153,11 @@ namespace InstagramApiSharp.API.Processors
 
                 return Result.Success(converted);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaProductInfo), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -151,39 +175,84 @@ namespace InstagramApiSharp.API.Processors
             var mediaList = new InstaMediaList();
             try
             {
-                var instaUri = UriCreator.GetUserShoppableMediaListUri(userId, paginationParameters.NextMaxId);
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
-                var response = await _httpRequestProcessor.SendAsync(request);
-                var json = await response.Content.ReadAsStringAsync();
+                if (paginationParameters == null)
+                    paginationParameters = PaginationParameters.MaxPagesToLoad(1);
 
-                if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaMediaList>(response, json);
-                var mediaResponse = JsonConvert.DeserializeObject<InstaMediaListResponse>(json,
-                    new InstaMediaListDataConverter());
+                InstaMediaList Convert(InstaMediaListResponse mediaListResponse)
+                {
+                    return ConvertersFabric.Instance.GetMediaListConverter(mediaListResponse).Convert();
+                }
 
+                var mediaResult = await GetShoppableMedia(userId, paginationParameters);
+                if (!mediaResult.Succeeded)
+                {
+                    if (mediaResult.Value != null)
+                        return Result.Fail(mediaResult.Info, Convert(mediaResult.Value));
+                    else
+                        return Result.Fail(mediaResult.Info, mediaList);
+                }
+                var mediaResponse = mediaResult.Value;
                 mediaList = ConvertersFabric.Instance.GetMediaListConverter(mediaResponse).Convert();
                 mediaList.NextMaxId = paginationParameters.NextMaxId = mediaResponse.NextMaxId;
+                paginationParameters.PagesLoaded++;
 
                 while (mediaResponse.MoreAvailable
                        && !string.IsNullOrEmpty(paginationParameters.NextMaxId)
                        && paginationParameters.PagesLoaded < paginationParameters.MaximumPagesToLoad)
                 {
-                    paginationParameters.PagesLoaded++;
-                    var nextMedia = await GetUserShoppableMedia(userId, paginationParameters);
+                    var nextMedia = await GetShoppableMedia(userId, paginationParameters);
                     if (!nextMedia.Succeeded)
                         return Result.Fail(nextMedia.Info, mediaList);
                     mediaList.NextMaxId = paginationParameters.NextMaxId = nextMedia.Value.NextMaxId;
-                    mediaList.AddRange(nextMedia.Value);
+                    mediaList.AddRange(Convert(nextMedia.Value));
+                    mediaResponse.MoreAvailable = nextMedia.Value.MoreAvailable;
+                    mediaResponse.ResultsCount += nextMedia.Value.ResultsCount;
+                    paginationParameters.PagesLoaded++;
                 }
 
                 mediaList.Pages = paginationParameters.PagesLoaded;
                 mediaList.PageSize = mediaResponse.ResultsCount;
                 return Result.Success(mediaList);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMediaList), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
                 return Result.Fail(exception, mediaList);
+            }
+        }
+
+        private async Task<IResult<InstaMediaListResponse>> GetShoppableMedia(long userId,
+                                    PaginationParameters paginationParameters)
+        {
+            try
+            {
+                var instaUri = UriCreator.GetUserShoppableMediaListUri(userId, paginationParameters.NextMaxId);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaMediaListResponse>(response, json);
+
+                var mediaResponse = JsonConvert.DeserializeObject<InstaMediaListResponse>(json,
+                    new InstaMediaListDataConverter());
+
+                return Result.Success(mediaResponse);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMediaListResponse), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail(exception, default(InstaMediaListResponse));
             }
         }
     }

@@ -37,6 +37,8 @@ namespace InstagramApiSharp.API.Builder
             if (_user == null)
                 _user = UserSessionData.Empty;
 
+            if (_httpHandler == null) _httpHandler = new HttpClientHandler();
+
             if (_httpClient == null)
                 _httpClient = new HttpClient(_httpHandler) { BaseAddress = new Uri(InstaApiConstants.INSTAGRAM_URL) };
 
@@ -58,16 +60,18 @@ namespace InstagramApiSharp.API.Builder
             if (string.IsNullOrEmpty(_requestMessage.Password)) _requestMessage.Password = _user?.Password;
             if (string.IsNullOrEmpty(_requestMessage.Username)) _requestMessage.Username = _user?.UserName;
 
-            //if (_device == null && !string.IsNullOrEmpty(_requestMessage.DeviceId))
-            //    _device = AndroidDeviceGenerator.GetById(_requestMessage.DeviceId);
-            if (_device == null) AndroidDeviceGenerator.GetRandomAndroidDevice();
+            try
+            {
+                InstaApiConstants.TIMEZONE_OFFSET = int.Parse(DateTimeOffset.Now.Offset.TotalSeconds.ToString());
+            }
+            catch { }
 
             if (_httpRequestProcessor == null)
                 _httpRequestProcessor =
                     new HttpRequestProcessor(_delay, _httpClient, _httpHandler, _requestMessage, _logger);
 
             if (_apiVersionType == null)
-                _apiVersionType = InstaApiVersionType.Version44;
+                _apiVersionType = InstaApiVersionType.Version86;
 
             var instaApi = new InstaApi(_user, _logger, _device, _httpRequestProcessor, _apiVersionType.Value);
             if (_sessionHandler != null)
@@ -166,7 +170,9 @@ namespace InstagramApiSharp.API.Builder
         ///     <para>Note: this is optional, if you didn't set this, InstagramApiSharp will choose random device.</para>
         /// </summary>
         /// <param name="androidDevice">Android device</param>
-        /// <returns>API Builder</returns>
+        /// <returns>
+        ///     API Builder
+        /// </returns>
         public IInstaApiBuilder SetDevice(AndroidDevice androidDevice)
         {
             _device = androidDevice;
@@ -176,6 +182,9 @@ namespace InstagramApiSharp.API.Builder
         ///     Set instagram api version (for user agent version)
         /// </summary>
         /// <param name="apiVersion">Api version</param>
+        /// <returns>
+        ///     API Builder
+        /// </returns>
         public IInstaApiBuilder SetApiVersion(InstaApiVersionType apiVersion)
         {
             _apiVersionType = apiVersion;
@@ -186,7 +195,9 @@ namespace InstagramApiSharp.API.Builder
         ///     Set session handler
         /// </summary>
         /// <param name="sessionHandler">Session handler</param>
-        /// <returns></returns>
+        /// <returns>
+        ///     API Builder
+        /// </returns>
         public IInstaApiBuilder SetSessionHandler(ISessionHandler sessionHandler)
         {
             _sessionHandler = sessionHandler;
@@ -197,7 +208,9 @@ namespace InstagramApiSharp.API.Builder
         ///     Set Http request processor
         /// </summary>
         /// <param name="httpRequestProcessor">HttpRequestProcessor</param>
-        /// <returns></returns>
+        /// <returns>
+        ///     API Builder
+        /// </returns>
         public IInstaApiBuilder SetHttpRequestProcessor(IHttpRequestProcessor httpRequestProcessor)
         {
             _httpRequestProcessor = httpRequestProcessor;
@@ -207,7 +220,9 @@ namespace InstagramApiSharp.API.Builder
         /// <summary>
         ///     Creates the builder.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>
+        ///     API Builder
+        /// </returns>
         public static IInstaApiBuilder CreateBuilder()
         {
             return new InstaApiBuilder();

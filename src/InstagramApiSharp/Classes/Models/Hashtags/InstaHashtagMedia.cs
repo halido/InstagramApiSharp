@@ -11,11 +11,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace InstagramApiSharp.Classes.Models.Hashtags
+namespace InstagramApiSharp.Classes.Models
 {
-    public class InstaHashtagMedia
+    public class InstaSectionMedia
     {
         public List<InstaMedia> Medias { get; set; } = new List<InstaMedia>();
+
+        public List<InstaRelatedHashtag> RelatedHashtags { get; set; } = new List<InstaRelatedHashtag>();
 
         public bool MoreAvailable { get; set; }
 

@@ -98,6 +98,11 @@ namespace InstagramApiSharp.API.Processors
 
                 return Result.Success(ConvertersFabric.Instance.GetBusinessUserConverter(obj).Convert());
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessUser), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -111,18 +116,10 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="userIdsToAdd">User ids (pk) to add</param>
         public async Task<IResult<InstaBrandedContent>> AddUserToBrandedWhiteListAsync(params long[] userIdsToAdd)
         {
-            try
-            {
-                if (userIdsToAdd == null || userIdsToAdd != null && !userIdsToAdd.Any())
-                    return Result.Fail<InstaBrandedContent>("At least one user id is require.");
+            if (userIdsToAdd == null || userIdsToAdd != null && !userIdsToAdd.Any())
+                return Result.Fail<InstaBrandedContent>("At least one user id is require.");
 
-                return await UpdateBrandedContent(null, userIdsToAdd);
-            }
-            catch (Exception exception)
-            {
-                _logger?.LogException(exception);
-                return Result.Fail<InstaBrandedContent>(exception);
-            }
+            return await UpdateBrandedContent(null, userIdsToAdd);
         }
 
         /// <summary>
@@ -174,10 +171,48 @@ namespace InstagramApiSharp.API.Processors
 
                 return Result.Success(ConvertersFabric.Instance.GetBusinessUserConverter(obj).Convert());
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessUser), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
                 return Result.Fail<InstaBusinessUser>(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Get account details for an business account ( like it's joined date )
+        ///     <param name="userId">User id (pk)</param>
+        /// </summary>
+        public async Task<IResult<InstaAccountDetails>> GetAccountDetailsAsync(long userId)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetAccountDetailsUri(userId);
+
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaAccountDetails>(response, "Can't find account details for this user pk", json);
+
+                var obj = JsonConvert.DeserializeObject<InstaAccountDetailsResponse>(json);
+                return Result.Success(ConvertersFabric.Instance.GetAccountDetailsConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaAccountDetails), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaAccountDetails>(exception);
             }
         }
 
@@ -215,6 +250,11 @@ namespace InstagramApiSharp.API.Processors
                     partners.Add(p);
 
                 return Result.Success(partners);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessPartnersList), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -257,6 +297,11 @@ namespace InstagramApiSharp.API.Processors
 
                 var obj = JsonConvert.DeserializeObject<InstaBusinessCategoryList>(json, new InstaBusinessCategoryDataConverter());
                 return Result.Success(obj);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessCategoryList), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -302,6 +347,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaFullMediaInsightsRootResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetFullMediaInsightsConverter(obj.Data.Media).Convert());
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaFullMediaInsights), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -328,6 +378,11 @@ namespace InstagramApiSharp.API.Processors
                     return Result.UnExpectedResponse<InstaMediaInsights>(response, json);
                 var obj = JsonConvert.DeserializeObject<InstaMediaInsightsContainer>(json);
                 return Result.Success(obj.MediaOrganicInsights);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMediaInsights), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -357,6 +412,11 @@ namespace InstagramApiSharp.API.Processors
                 mediaList.PageSize = mediaResponse.ResultsCount;
                 return Result.Success(mediaList);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMediaList), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -381,14 +441,17 @@ namespace InstagramApiSharp.API.Processors
                 var variables = new JObject
                 {
                     {"query_params", queryParamsData},
-                    {"timezone", InstaApiConstants.TIMEZONE}
+                    {"timezone", InstaApiConstants.TIMEZONE},
+                    {"activityTab", true},
+                    {"audienceTab", true},
+                    {"contentTab", true}
                 };
                 var data = new Dictionary<string, string>
                 {
                     {"access_token", "undefined"},
                     {"fb_api_caller_class", "RelayModern"},
                     {"variables", variables.ToString(Formatting.None)},
-                    {"doc_id", "1618080801573402"}
+                    {"doc_id", "1926322010754880"}
                 };
                 var request =
                     _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
@@ -399,6 +462,11 @@ namespace InstagramApiSharp.API.Processors
                     return Result.UnExpectedResponse<InstaStatistics>(response, json);
                 var obj = JsonConvert.DeserializeObject<InstaStatisticsRootResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetStatisticsConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaStatistics), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -435,6 +503,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
                 return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -467,6 +540,11 @@ namespace InstagramApiSharp.API.Processors
                     return Result.UnExpectedResponse<bool>(response, json);
                 var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
                 return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -515,6 +593,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaBusinessCategoryList>(json, new InstaBusinessCategoryDataConverter());
                 return Result.Success(obj);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessCategoryList), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -562,6 +645,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaBusinessSuggestedCategoryList>(json, new InstaBusinessSuggestedCategoryDataConverter());
                 return Result.Success(obj);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessSuggestedCategoryList), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -590,6 +678,11 @@ namespace InstagramApiSharp.API.Processors
 
                 var obj = JsonConvert.DeserializeObject<InstaBrandedContentResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetBrandedContentConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBrandedContent), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -627,6 +720,11 @@ namespace InstagramApiSharp.API.Processors
 
                 return Result.Success(ConvertersFabric.Instance.GetBusinessUserConverter(obj).Convert());
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessUser), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -648,18 +746,10 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="userIdsToRemove">User ids (pk) to remove</param>
         public async Task<IResult<InstaBrandedContent>> RemoveUserFromBrandedWhiteListAsync(params long[] userIdsToRemove)
         {
-            try
-            {
-                if (userIdsToRemove == null || userIdsToRemove != null && !userIdsToRemove.Any())
-                    return Result.Fail<InstaBrandedContent>("At least one user id is require.");
+            if (userIdsToRemove == null || userIdsToRemove != null && !userIdsToRemove.Any())
+                return Result.Fail<InstaBrandedContent>("At least one user id is require.");
 
-                return await UpdateBrandedContent(null, null, userIdsToRemove);
-            }
-            catch (Exception exception)
-            {
-                _logger?.LogException(exception);
-                return Result.Fail<InstaBrandedContent>(exception);
-            }
+            return await UpdateBrandedContent(null, null, userIdsToRemove);
         }
 
         /// <summary>
@@ -701,6 +791,11 @@ namespace InstagramApiSharp.API.Processors
                 var obj = JsonConvert.DeserializeObject<InstaBusinessCityLocationList>(json, new InstaBusinessCityLocationDataConverter());
                 return Result.Success(obj);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessCityLocationList), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -733,6 +828,11 @@ namespace InstagramApiSharp.API.Processors
 
                 var obj = JsonConvert.DeserializeObject<InstaDiscoverSearchResultResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetDiscoverSearchResultConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaDiscoverSearchResult), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -814,6 +914,11 @@ namespace InstagramApiSharp.API.Processors
 
                 return Result.Success(ConvertersFabric.Instance.GetBusinessUserConverter(obj).Convert());
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBusinessUser), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
@@ -853,6 +958,11 @@ namespace InstagramApiSharp.API.Processors
                 var json = await response.Content.ReadAsStringAsync();
                 var obj = JsonConvert.DeserializeObject<InstaBusinessValidateUrl>(json);
                 return obj.IsValid ? Result.Success(true) : Result.Fail<bool>(obj.ErrorMessage);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -901,6 +1011,11 @@ namespace InstagramApiSharp.API.Processors
 
                 var obj = JsonConvert.DeserializeObject<InstaBrandedContentResponse>(json);
                 return Result.Success(ConvertersFabric.Instance.GetBrandedContentConverter(obj).Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaBrandedContent), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {

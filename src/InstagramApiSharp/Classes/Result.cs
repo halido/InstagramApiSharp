@@ -63,6 +63,11 @@ namespace InstagramApiSharp.Classes
             return new Result<T>(false, resValue, new ResultInfo(exception));
         }
 
+        public static IResult<T> Fail<T>(Exception exception, T resValue, ResponseType responseType)
+        {
+            return new Result<T>(false, resValue, new ResultInfo(exception, responseType));
+        }
+
         public static IResult<T> Fail<T>(ResultInfo info, T resValue)
         {
             return new Result<T>(false, resValue, info);
@@ -86,7 +91,10 @@ namespace InstagramApiSharp.Classes
                 var status = ErrorHandlingHelper.GetBadStatusFromJsonString(json);
                 var responseType = GetResponseType(status);
 
-                var resultInfo = new ResultInfo(responseType, status.Message);
+                var resultInfo = new ResultInfo(responseType, status)
+                {
+                    Challenge = status.Challenge
+                };
                 return new Result<T>(false, default(T), resultInfo);
             }
         }
@@ -104,7 +112,11 @@ namespace InstagramApiSharp.Classes
                 var status = ErrorHandlingHelper.GetBadStatusFromJsonString(json);
                 var responseType = GetResponseType(status);
 
-                var resultInfo = new ResultInfo(responseType, message);
+                var resultInfo = new ResultInfo(responseType, message)
+                {
+                    Challenge = status.Challenge
+                };
+
                 return new Result<T>(false, default(T), resultInfo);
             }
         }
@@ -169,8 +181,8 @@ namespace InstagramApiSharp.Classes
             if (status.Spam)
                 responseType = ResponseType.Spam;
 
-            //if (!string.IsNullOrEmpty(status.Message) && status.Message.Contains("challenge_required"))
-            //    responseType = ResponseType.ChallengeRequired;
+            if (status?.Message?.IndexOf("challenge_required") != -1)
+                responseType = ResponseType.ChallengeRequired;
             return responseType;
         }
     }

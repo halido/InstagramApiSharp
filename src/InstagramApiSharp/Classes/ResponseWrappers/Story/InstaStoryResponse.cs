@@ -12,7 +12,7 @@ namespace InstagramApiSharp.Classes.ResponseWrappers
 
         [JsonProperty("expiring_at")] public long ExpiringAt { get; set; }
 
-        [JsonProperty("user")] public InstaUserShortResponse User { get; set; }
+        [JsonProperty("user")] public InstaUserShortFriendshipFullResponse User { get; set; }
 
         [JsonProperty("owner")] public InstaUserShortResponse Owner { get; set; }
 
@@ -30,7 +30,7 @@ namespace InstagramApiSharp.Classes.ResponseWrappers
 
         [JsonProperty("seen_ranked_position")] public int SeenRankedPosition { get; set; }
 
-        [JsonProperty("items")] public List<InstaMediaItemResponse> Items { get; set; }
+        [JsonProperty("items")] public List<InstaStoryItemResponse> Items { get; set; }
 
         [JsonProperty("prefetch_count")] public int PrefetchCount { get; set; }
 

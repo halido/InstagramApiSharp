@@ -35,10 +35,23 @@ namespace InstagramApiSharp.Converters
                 PhotoOfYou = SourceObject.PhotoOfYou,
                 Pk = SourceObject.Pk,
                 TakenAt = DateTimeHelper.UnixTimestampToDateTime(SourceObject.TakenAt),
+                ImportedTakenAt = DateTimeHelper.UnixTimestampToDateTime(SourceObject.ImportedTakenAt ?? 0),
                 VideoDuration = SourceObject.VideoDuration ?? 0,
                 AdAction = SourceObject.AdAction,
                 SupportsReelReactions = SourceObject.SupportsReelReactions,
-                ShowOneTapTooltip = SourceObject.ShowOneTapTooltip
+                ShowOneTapTooltip = SourceObject.ShowOneTapTooltip,
+                LinkText = SourceObject.LinkText,
+                CanReshare = SourceObject.CanReshare,
+                CommentLikesEnabled = SourceObject.CommentLikesEnabled,
+                CommentThreadingEnabled = SourceObject.CommentThreadingEnabled,
+                NumberOfQualities = SourceObject.NumberOfQualities ?? 0,
+                TimezoneOffset = SourceObject.TimezoneOffset ?? 0,
+                VideoDashManifest = SourceObject.VideoDashManifest,
+                StoryIsSavedToArchive = SourceObject.StoryIsSavedToArchive ?? false,
+                ViewerCount = SourceObject.ViewerCount ?? 0,
+                TotalViewerCount = SourceObject.TotalViewerCount ?? 0,
+                ViewerCursor = SourceObject.ViewerCursor,
+                HasSharedToFb = SourceObject.HasSharedToFb ?? 0
             };
 
             if (SourceObject.User != null)
@@ -66,7 +79,7 @@ namespace InstagramApiSharp.Converters
 
             if (SourceObject.StoryLocations != null && SourceObject.StoryLocations.Any())
                 foreach (var location in SourceObject.StoryLocations)
-                    instaStory.StoryLocations.Add(ConvertersFabric.Instance.GetLocationConverter(location).Convert());
+                    instaStory.StoryLocations.Add(ConvertersFabric.Instance.GetStoryLocationConverter(location).Convert());
 
             if (SourceObject.StoryFeedMedia != null && SourceObject.StoryFeedMedia.Any())
                 foreach (var storyFeed in SourceObject.StoryFeedMedia)
@@ -77,6 +90,46 @@ namespace InstagramApiSharp.Converters
                     if (cta.Links != null && cta.Links.Any())
                         foreach (var link in cta.Links)
                             instaStory.StoryCTA.Add(ConvertersFabric.Instance.GetStoryCtaConverter(link).Convert());
+
+            if (SourceObject.StoryPolls?.Count > 0)
+                foreach (var poll in SourceObject.StoryPolls)
+                    instaStory.StoryPolls.Add(ConvertersFabric.Instance.GetStoryPollItemConverter(poll).Convert());
+
+            if (SourceObject.StorySliders?.Count > 0)
+                foreach (var slider in SourceObject.StorySliders)
+                    instaStory.StorySliders.Add(ConvertersFabric.Instance.GetStorySliderItemConverter(slider).Convert());
+
+            if (SourceObject.StoryQuestions?.Count > 0)
+                foreach (var Question in SourceObject.StoryQuestions)
+                    instaStory.StoryQuestions.Add(ConvertersFabric.Instance.GetStoryQuestionItemConverter(Question).Convert());
+
+            if (SourceObject.StoryPollVoters?.Count > 0)
+                foreach (var voter in SourceObject.StoryPollVoters)
+                    instaStory.StoryPollVoters.Add(ConvertersFabric.Instance.GetStoryPollVoterInfoItemConverter(voter).Convert());
+
+            if (SourceObject.Viewers?.Count > 0)
+                foreach (var viewer in SourceObject.Viewers)
+                    instaStory.Viewers.Add(ConvertersFabric.Instance.GetUserShortConverter(viewer).Convert());
+
+            if (SourceObject.Likers?.Count > 0)
+                foreach (var liker in SourceObject.Likers)
+                    instaStory.Likers.Add(ConvertersFabric.Instance.GetUserShortConverter(liker).Convert());
+
+            if (SourceObject.PreviewComments?.Count > 0)
+                foreach (var comment in SourceObject.PreviewComments)
+                    instaStory.PreviewComments.Add(ConvertersFabric.Instance.GetCommentConverter(comment).Convert());
+
+            if (SourceObject.StorySliderVoters?.Count > 0)
+                foreach (var voter in SourceObject.StorySliderVoters)
+                    instaStory.StorySliderVoters.Add(ConvertersFabric.Instance.GetStorySliderVoterInfoItemConverter(voter).Convert());
+
+            if (SourceObject.StoryQuestionsResponderInfos?.Count > 0)
+                foreach (var responderInfo in SourceObject.StoryQuestionsResponderInfos)
+                    instaStory.StoryQuestionsResponderInfos.Add(ConvertersFabric.Instance.GetStoryQuestionInfoConverter(responderInfo).Convert());
+
+            if(SourceObject.Countdowns?.Count > 0)
+                foreach (var countdown in SourceObject.Countdowns)
+                    instaStory.Countdowns.Add(ConvertersFabric.Instance.GetStoryCountdownItemConverter(countdown).Convert());
 
             return instaStory;
         }

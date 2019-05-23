@@ -1,5 +1,4 @@
-﻿using InstagramApiSharp.Classes.ResponseWrappers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace InstagramApiSharp.Classes.Models
@@ -66,13 +65,29 @@ namespace InstagramApiSharp.Classes.Models
 
         public bool PhotoOfYou { get; set; }
 
+        public string StoryStickerIds { get; set; }
+
+        public double TimezoneOffset { get; set; }
+
+        public bool StoryIsSavedToArchive { get; set; }
+
+        public double ViewerCount { get; set; }
+
+        public double TotalViewerCount { get; set; }
+
+        public string ViewerCursor { get; set; }
+
+        public double HasSharedToFb { get; set; }
+
         public List<InstaReelMention> ReelMentions { get; set; } = new List<InstaReelMention>();
 
         public List<InstaReelMention> StoryHashtags { get; set; } = new List<InstaReelMention>();
 
-        public List<InstaLocation> StoryLocations { get; set; } = new List<InstaLocation>();
+        public List<InstaStoryLocation> StoryLocations { get; set; } = new List<InstaStoryLocation>();
 
         public DateTime TakenAt { get; set; }
+
+        public DateTime ImportedTakenAt { get; set; }
 
         public string VideoDashManifest { get; set; }
 
@@ -87,5 +102,25 @@ namespace InstagramApiSharp.Classes.Models
         public double VideoDuration { get; set; }
 
         public List<InstaVideo> VideoList { get; set; } = new List<InstaVideo>();
+
+        public List<InstaStoryPollItem> StoryPolls { get; set; } = new List<InstaStoryPollItem>();
+
+        public List<InstaStorySliderItem> StorySliders { get; set; } = new List<InstaStorySliderItem>();
+
+        public List<InstaStoryQuestionItem> StoryQuestions { get; set; } = new List<InstaStoryQuestionItem>();
+
+        public List<InstaStoryQuestionInfo> StoryQuestionsResponderInfos { get; set; } = new List<InstaStoryQuestionInfo>();
+
+        public List<InstaStoryPollVoterInfoItem> StoryPollVoters { get; set; } = new List<InstaStoryPollVoterInfoItem>();
+
+        public List<InstaStorySliderVoterInfoItem> StorySliderVoters { get; set; } = new List<InstaStorySliderVoterInfoItem>();
+
+        public List<InstaUserShort> Viewers { get; set; } = new List<InstaUserShort>();
+
+        public List<InstaUserShort> Likers { get; set; } = new List<InstaUserShort>();
+
+        public List<InstaComment> PreviewComments { get; set; } = new List<InstaComment>();
+
+        public List<InstaStoryCountdownItem> Countdowns { get; set; } = new List<InstaStoryCountdownItem>();
     }
 }

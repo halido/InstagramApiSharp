@@ -207,6 +207,23 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<InstaAccountVerifySms>> VerifySmsCodeAsync(string phoneNumber, string verificationCode);
         #endregion two factor authentication enable/disable
 
+        #region Other functions
+
+        /// <summary>
+        ///     Enable presence (people can track your activities and you can see their activies too)
+        /// </summary>
+        Task<IResult<bool>> EnablePresenceAsync();
+
+        /// <summary>
+        ///     Disable presence (people can't track your activities and you can't see their activies too)
+        /// </summary>
+        Task<IResult<bool>> DisablePresenceAsync();
+
+        /// <summary>
+        ///     Get presence options (see your presence is disable or not)
+        /// </summary>
+        Task<IResult<InstaPresence>> GetPresenceOptionsAsync();
+
         /// <summary>
         ///     Switch to personal account
         /// </summary>
@@ -217,15 +234,10 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         Task<IResult<InstaBusinessUser>> SwitchToBusinessAccountAsync();
 
+
+        #endregion Other functions
+
         #region NOT COMPLETE FUNCTIONS
-        /// <summary>
-        ///     NOT COMPLETE dastrasi last activity
-        /// </summary>
-        //Task<IResult<object>> EnablePresenceAsync();
-        /// <summary>
-        ///     NOT COMPLETE dastrasi last activity
-        /// </summary>
-        //Task<IResult<object>> DisablePresenceAsync();
         /// <summary>
         ///     NOT COMPLETE dastrasi last activity
         /// </summary>

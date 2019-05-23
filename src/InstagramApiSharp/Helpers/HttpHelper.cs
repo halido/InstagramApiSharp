@@ -12,7 +12,7 @@ namespace InstagramApiSharp.Helpers
     internal class HttpHelper
     {
         public /*readonly*/ InstaApiVersion _apiVersion;
-        public HttpHelper(InstaApiVersion apiVersionType)
+        internal HttpHelper(InstaApiVersion apiVersionType)
         {
             _apiVersion = apiVersionType;
         }
@@ -34,6 +34,16 @@ namespace InstagramApiSharp.Helpers
         {
             var request = GetDefaultRequest(HttpMethod.Post, uri, deviceInfo);
             request.Content = new FormUrlEncodedContent(data);
+            return request;
+        }
+        /// <summary>
+        ///     This is only for https://instagram.com site
+        /// </summary>
+        public HttpRequestMessage GetWebRequest(HttpMethod method, Uri uri, AndroidDevice deviceInfo)
+        {
+            var request = GetDefaultRequest(HttpMethod.Get, uri, deviceInfo);
+            request.Headers.Remove(InstaApiConstants.HEADER_USER_AGENT);
+            request.Headers.Add(InstaApiConstants.HEADER_USER_AGENT, InstaApiConstants.WEB_USER_AGENT);
             return request;
         }
         public HttpRequestMessage GetSignedRequest(HttpMethod method,

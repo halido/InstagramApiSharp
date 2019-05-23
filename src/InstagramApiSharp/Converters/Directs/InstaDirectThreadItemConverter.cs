@@ -4,6 +4,7 @@ using System.Linq;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Classes.ResponseWrappers;
+using InstagramApiSharp.Enums;
 using InstagramApiSharp.Helpers;
 
 namespace InstagramApiSharp.Converters
@@ -96,10 +97,12 @@ namespace InstagramApiSharp.Converters
             else if (threadItem.ItemType == InstaDirectThreadItemType.RavenMedia &&
                 SourceObject.RavenMedia != null)
             {
-                var converter = ConvertersFabric.Instance.GetSingleMediaConverter(SourceObject.RavenMedia);
+                var converter = ConvertersFabric.Instance.GetVisualMediaConverter(SourceObject.RavenMedia);
                 threadItem.RavenMedia = converter.Convert();
                 threadItem.RavenSeenUserIds = SourceObject.RavenSeenUserIds;
-                threadItem.RavenViewMode = SourceObject.RavenViewMode;
+                if (!string.IsNullOrEmpty(SourceObject.RavenViewMode))
+                    threadItem.RavenViewMode = (InstaViewMode)Enum.Parse(typeof(InstaViewMode), SourceObject.RavenViewMode, true);
+
                 threadItem.RavenReplayChainCount = SourceObject.RavenReplayChainCount ?? 0;
                 threadItem.RavenSeenCount = SourceObject.RavenSeenCount;
                 if (SourceObject.RavenExpiringMediaActionSummary != null)
@@ -115,6 +118,12 @@ namespace InstagramApiSharp.Converters
                             ExpireTime = DateTimeHelper.UnixTimestampMilisecondsToDateTime(SourceObject.RavenExpiringMediaActionSummary.TimeStamp);
 
                 }
+            }
+            // VisualMedia is updated RavenMedia for v61 and newer
+            else if (threadItem.ItemType == InstaDirectThreadItemType.RavenMedia &&
+                SourceObject.VisualMedia != null)
+            {
+                threadItem.VisualMedia = ConvertersFabric.Instance.GetVisualMediaContainerConverter(SourceObject.VisualMedia).Convert();
             }
             else if (threadItem.ItemType == InstaDirectThreadItemType.ActionLog && SourceObject.ActionLogMedia != null)
             {
@@ -195,7 +204,38 @@ namespace InstagramApiSharp.Converters
                 }
                 catch { }
             }
-
+            else if (threadItem.ItemType == InstaDirectThreadItemType.VoiceMedia && SourceObject.VoiceMedia != null)
+            {
+                try
+                {
+                    threadItem.VoiceMedia = ConvertersFabric.Instance.GetVoiceMediaConverter(SourceObject.VoiceMedia).Convert();
+                }
+                catch { }
+            }
+            else if (threadItem.ItemType == InstaDirectThreadItemType.AnimatedMedia && SourceObject.AnimatedMedia != null)
+            {
+                try
+                {
+                    threadItem.AnimatedMedia = ConvertersFabric.Instance.GetAnimatedImageConverter(SourceObject.AnimatedMedia).Convert();
+                }
+                catch { }
+            }
+            else if (threadItem.ItemType == InstaDirectThreadItemType.Hashtag && SourceObject.HashtagMedia != null)
+            {
+                try
+                {
+                    threadItem.HashtagMedia = ConvertersFabric.Instance.GetDirectHashtagConverter(SourceObject.HashtagMedia).Convert();
+                }
+                catch { }
+            }
+            else if (threadItem.ItemType == InstaDirectThreadItemType.LiveViewerInvite && SourceObject.LiveViewerInvite != null)
+            {
+                try
+                {
+                    threadItem.LiveViewerInvite = ConvertersFabric.Instance.GetDirectBroadcastConverter(SourceObject.LiveViewerInvite).Convert();
+                }
+                catch { }
+            }
             return threadItem;
         }
     }

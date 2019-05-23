@@ -34,10 +34,13 @@ namespace InstagramApiSharp.Converters
                 ReshareSendCount = SourceObject.ReshareSendCount,
                 ExpiringMediaReceiveCount = SourceObject.ExpiringMediaReceiveCount,
                 ExpiringMediaSendCount = SourceObject.ExpiringMediaSendCount,
-                NewestCursor = SourceObject.NewestCursor
+                NewestCursor = SourceObject.NewestCursor,
+                ThreadType = SourceObject.ThreadType,
+                Title = SourceObject.Title,
+            
+                MentionsMuted = SourceObject.MentionsMuted ?? false
             };
-            thread.ThreadType = SourceObject.ThreadType;
-            thread.Title = SourceObject.Title;
+
             if (SourceObject.Inviter != null)
             {
                 var userConverter = ConvertersFabric.Instance.GetUserShortConverter(SourceObject.Inviter);
@@ -54,22 +57,25 @@ namespace InstagramApiSharp.Converters
                 }
             }
 
+            if (SourceObject.LastPermanentItem != null)
+            {
+                var converter = ConvertersFabric.Instance.GetDirectThreadItemConverter(SourceObject.LastPermanentItem);
+                thread.LastPermanentItem = converter.Convert();
+            }
             if (SourceObject.Users != null && SourceObject.Users.Count > 0)
             {
-                thread.Users = new InstaUserShortList();
                 foreach (var user in SourceObject.Users)
                 {
-                    var converter = ConvertersFabric.Instance.GetUserShortConverter(user);
+                    var converter = ConvertersFabric.Instance.GetUserShortFriendshipConverter(user);
                     thread.Users.Add(converter.Convert());
                 }
             }
 
             if (SourceObject.LeftUsers != null && SourceObject.LeftUsers.Count > 0)
             {
-                thread.LeftUsers = new InstaUserShortList();
                 foreach (var user in SourceObject.LeftUsers)
                 {
-                    var converter = ConvertersFabric.Instance.GetUserShortConverter(user);
+                    var converter = ConvertersFabric.Instance.GetUserShortFriendshipConverter(user);
                     thread.LeftUsers.Add(converter.Convert());
                 }
             }
@@ -96,7 +102,16 @@ namespace InstagramApiSharp.Converters
                 }
                 catch { }
             }
-
+            try
+            {
+                if (thread.LastActivity > thread.LastSeenAt[0].SeenTime)
+                    thread.HasUnreadMessage = true;
+            }
+            catch 
+            {
+                thread.HasUnreadMessage = false;
+            }
+            
 
             return thread;
         }

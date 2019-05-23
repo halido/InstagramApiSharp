@@ -60,7 +60,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="isDirectVideo">Direct video</param>
         /// <param name="isDisappearingVideo">Disappearing video</param>
         public async Task<IResult<bool>> SendVideoAsync(Action<InstaUploaderProgress> progress, bool isDirectVideo, bool isDisappearingVideo,string caption, 
-            InstaViewMode viewMode, InstaStoryType storyType,  string recipients, string threadId, InstaVideoUpload video, Uri uri = null)
+            InstaViewMode viewMode, InstaStoryType storyType,  string recipients, string threadId, InstaVideoUpload video, Uri uri = null, InstaStoryUploadOptions uploadOptions = null)
         {
             var upProgress = new InstaUploaderProgress
             {
@@ -255,7 +255,7 @@ namespace InstagramApiSharp.API.Processors
                     upProgress.UploadState = InstaUploadState.ThumbnailUploaded;
                     progress?.Invoke(upProgress);
                 }
-                return await ConfigureVideo(progress, upProgress, uploadId, isDirectVideo, isDisappearingVideo,caption, viewMode,storyType, recipients, threadId, uri);
+                return await ConfigureVideo(progress, upProgress, uploadId, isDirectVideo, isDisappearingVideo,caption, viewMode,storyType, recipients, threadId, uri, uploadOptions);
             }
             catch (Exception exception)
             {
@@ -267,7 +267,7 @@ namespace InstagramApiSharp.API.Processors
         }
 
         private async Task<IResult<bool>> ConfigureVideo(Action<InstaUploaderProgress> progress, InstaUploaderProgress upProgress, string uploadId, bool isDirectVideo, bool isDisappearingVideo, string caption,
-            InstaViewMode viewMode, InstaStoryType storyType, string recipients, string threadId, Uri uri)
+            InstaViewMode viewMode, InstaStoryType storyType, string recipients, string threadId, Uri uri, InstaStoryUploadOptions uploadOptions = null)
         {
             try
             {
@@ -407,6 +407,67 @@ namespace InstagramApiSharp.API.Processors
                             };
                             data.Add("story_cta", storyCta.ToString(Formatting.None));
                         }
+
+                        if (uploadOptions != null)
+                        {
+                            if (uploadOptions.Hashtags?.Count > 0)
+                            {
+                                var hashtagArr = new JArray();
+                                foreach (var item in uploadOptions.Hashtags)
+                                    hashtagArr.Add(item.ConvertToJson());
+
+                                data.Add("story_hashtags", hashtagArr.ToString(Formatting.None));
+                            }
+
+                            if (uploadOptions.Locations?.Count > 0)
+                            {
+                                var locationArr = new JArray();
+                                foreach (var item in uploadOptions.Locations)
+                                    locationArr.Add(item.ConvertToJson());
+
+                                data.Add("story_locations", locationArr.ToString(Formatting.None));
+                            }
+                            if (uploadOptions.Slider != null)
+                            {
+                                var sliderArr = new JArray
+                                {
+                                    uploadOptions.Slider.ConvertToJson()
+                                };
+
+                                data.Add("story_sliders", sliderArr.ToString(Formatting.None));
+                                if (uploadOptions.Slider.IsSticker)
+                                    data.Add("story_sticker_ids", $"emoji_slider_{uploadOptions.Slider.Emoji}");
+                            }
+                            else
+                            {
+                                if (uploadOptions.Polls?.Count > 0)
+                                {
+                                    var pollArr = new JArray();
+                                    foreach (var item in uploadOptions.Polls)
+                                        pollArr.Add(item.ConvertToJson());
+
+                                    data.Add("story_polls", pollArr.ToString(Formatting.None));
+                                }
+                                if (uploadOptions.Questions?.Count > 0)
+                                {
+                                    var questionArr = new JArray();
+                                    foreach (var item in uploadOptions.Questions)
+                                        questionArr.Add(item.ConvertToJson());
+
+                                    data.Add("story_questions", questionArr.ToString(Formatting.None));
+                                }
+                            }
+                            if (uploadOptions.Countdown != null)
+                            {
+                                var countdownArr = new JArray
+                                {
+                                    uploadOptions.Countdown.ConvertToJson()
+                                };
+
+                                data.Add("story_countdowns", countdownArr.ToString(Formatting.None));
+                                data.Add("story_sticker_ids", "countdown_sticker_time");
+                            }
+                        }
                     }
                     instaUri = UriCreator.GetVideoStoryConfigureUri(true);
                     var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
@@ -435,6 +496,11 @@ namespace InstagramApiSharp.API.Processors
                     progress?.Invoke(upProgress);
                     return Result.UnExpectedResponse<bool>(response, json);
                 }
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -540,6 +606,11 @@ namespace InstagramApiSharp.API.Processors
                 progress?.Invoke(upProgress);
 
                 return await ConfigurePhoto(progress, upProgress, uploadId, isDirectPhoto, isDisappearingPhoto, caption, viewMode, storyType, recipients, threadId);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -682,6 +753,11 @@ namespace InstagramApiSharp.API.Processors
                     return Result.UnExpectedResponse<bool>(response, json);
                 }
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 upProgress.UploadState = InstaUploadState.Error;
@@ -799,6 +875,11 @@ namespace InstagramApiSharp.API.Processors
                 progress?.Invoke(upProgress);
                 return Result.UnExpectedResponse<InstaMedia>(response, json);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMedia), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 upProgress.UploadState = InstaUploadState.Error;
@@ -902,6 +983,11 @@ namespace InstagramApiSharp.API.Processors
                 progress?.Invoke(upProgress);
                 return Result.Success(obj);
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMedia), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 upProgress.UploadState = InstaUploadState.Error;
@@ -951,6 +1037,11 @@ namespace InstagramApiSharp.API.Processors
                 upProgress.UploadState = InstaUploadState.Completed;
                 progress?.Invoke(upProgress);
                 return Result.Success(obj);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMedia), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -1112,7 +1203,12 @@ namespace InstagramApiSharp.API.Processors
                 }
                 upProgress.UploadState = InstaUploadState.Error;
                 progress?.Invoke(upProgress);
-                return Result.UnExpectedResponse<InstaMedia>(response, json);            
+                return Result.UnExpectedResponse<InstaMedia>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMedia), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
@@ -1190,6 +1286,11 @@ namespace InstagramApiSharp.API.Processors
                 return Result.UnExpectedResponse<InstaMedia>(response, json);
 
             }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaMedia), ResponseType.NetworkProblem);
+            }
             catch (Exception exception)
             {
                 upProgress.UploadState = InstaUploadState.Error;
@@ -1204,7 +1305,7 @@ namespace InstagramApiSharp.API.Processors
 
 
 
-        private string GetRetryContext()
+        internal static string GetRetryContext()
         {
             return new JObject
                 {

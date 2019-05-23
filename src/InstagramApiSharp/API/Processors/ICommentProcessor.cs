@@ -9,6 +9,13 @@ namespace InstagramApiSharp.API.Processors
     /// </summary>
     public interface ICommentProcessor
     {
+
+        /// <summary>
+        ///     Block an user from commenting to medias
+        /// </summary>
+        /// <param name="userIds">User ids (pk)</param>
+        Task<IResult<bool>> BlockUserCommentingAsync(params long[] userIds);
+
         /// <summary>
         ///     Comment media
         /// </summary>
@@ -43,6 +50,11 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<bool>> EnableMediaCommentAsync(string mediaId);
 
         /// <summary>
+        ///     Get blocked users from commenting
+        /// </summary>
+        Task<IResult<InstaUserShortList>> GetBlockedCommentersAsync();
+
+        /// <summary>
         ///     Get media comments likers
         /// </summary>
         /// <param name="mediaId">Media id</param>
@@ -60,7 +72,7 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="mediaId">Media id</param>
         /// <param name="targetCommentId">Target comment id</param>
-       /// <param name="paginationParameters">Maximum amount of pages to load and start id</param>
+        /// <param name="paginationParameters">Maximum amount of pages to load and start id</param>
         Task<IResult<InstaInlineCommentList>>
            GetMediaRepliesCommentsAsync(string mediaId, string targetCommentId, PaginationParameters paginationParameters);
         /// <summary>
@@ -76,17 +88,26 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="targetCommentId">Target comment id</param>
         /// <param name="text">Comment text</param>
         Task<IResult<InstaComment>> ReplyCommentMediaAsync(string mediaId, string targetCommentId, string text);
+
         /// <summary>
         ///     Report media comment
         /// </summary>
         /// <param name="mediaId">Media id</param>
         /// <param name="commentId">Comment id</param>
         Task<IResult<bool>> ReportCommentAsync(string mediaId, string commentId);
+
+        /// <summary>
+        ///     Unblock an user from commenting to medias
+        /// </summary>
+        /// <param name="userIds">User ids (pk)</param>
+        Task<IResult<bool>> UnblockUserCommentingAsync(params long[] userIds);
+
         /// <summary>
         ///     Unlike media comment
         /// </summary>
         /// <param name="commentId">Comment id</param>
         Task<IResult<bool>> UnlikeCommentAsync(string commentId);
+
         /// <summary>
         ///     Translate comment or captions
         ///     <para>Note: use this function to translate captions too! (i.e: <see cref="InstaCaption.Pk"/>)</para>

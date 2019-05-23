@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Classes.Models.Business;
 using InstagramApiSharp.Classes.Models.Hashtags;
 using InstagramApiSharp.Classes.ResponseWrappers;
 using InstagramApiSharp.Classes.ResponseWrappers.Business;
+using InstagramApiSharp.Classes.ResponseWrappers.Web;
 using InstagramApiSharp.Converters.Business;
 using InstagramApiSharp.Converters.Hashtags;
 using InstagramApiSharp.Converters.Users;
@@ -22,6 +24,11 @@ namespace InstagramApiSharp.Converters
             InstaUserShortResponse instaresponse)
         {
             return new InstaUserShortConverter {SourceObject = instaresponse};
+        }
+        public IObjectConverter<InstaBlockedUserInfo, InstaBlockedUserInfoResponse> GetBlockedUserInfoConverter(
+           InstaBlockedUserInfoResponse instaresponse)
+        {
+            return new InstaBlockedUserInfoConverter { SourceObject = instaresponse };
         }
 
         public IObjectConverter<InstaCurrentUser, InstaCurrentUserResponse> GetCurrentUserConverter(
@@ -386,8 +393,8 @@ namespace InstagramApiSharp.Converters
             return new InstaHashtagStoryConverter { SourceObject = response };
         }
 
-        public IObjectConverter<InstaHashtagMedia, InstaHashtagMediaListResponse> GetHashtagMediaListConverter(
-            InstaHashtagMediaListResponse response)
+        public IObjectConverter<InstaSectionMedia, InstaSectionMediaListResponse> GetHashtagMediaListConverter(
+            InstaSectionMediaListResponse response)
         {
             return new InstaHashtagMediaConverter { SourceObject = response };
         }
@@ -428,6 +435,12 @@ namespace InstagramApiSharp.Converters
             return new InstaDiscoverRecentSearchesConverter { SourceObject = response };
         }
 
+        public IObjectConverter<InstaDiscoverTopSearches, InstaDiscoverTopSearchesResponse> GetDiscoverTopSearchesConverter(
+           InstaDiscoverTopSearchesResponse response)
+        {
+            return new InstaDiscoverTopSearchesConverter { SourceObject = response };
+        }
+
         public IObjectConverter<InstaDiscoverSuggestedSearches, InstaDiscoverSuggestedSearchesResponse> GetDiscoverSuggestedSearchesConverter(
             InstaDiscoverSuggestedSearchesResponse response)
         {
@@ -444,6 +457,12 @@ namespace InstagramApiSharp.Converters
             InstaFriendshipShortStatusListResponse response)
         {
             return new InstaFriendshipShortStatusListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaFriendshipShortStatus, InstaFriendshipShortStatusResponse> GetSingleFriendshipShortStatusConverter(
+            InstaFriendshipShortStatusResponse response)
+        {
+            return new InstaFriendshipShortStatusConverter { SourceObject = response };
         }
 
         public IObjectConverter<InstaUserChaining, InstaUserChainingResponse> GetSingleUserChainingConverter(
@@ -578,7 +597,7 @@ namespace InstagramApiSharp.Converters
             return new InstaProductInfoConverter { SourceObject = response };
         }
 
-        public IObjectConverter<InstaUserShortList, InstaBlockedUsersResponse> GetBlockedUsersConverter(
+        public IObjectConverter<InstaBlockedUsers, InstaBlockedUsersResponse> GetBlockedUsersConverter(
             InstaBlockedUsersResponse response)
         {
             return new InstaBlockedUsersConverter { SourceObject = response };
@@ -588,6 +607,378 @@ namespace InstagramApiSharp.Converters
             InstaUserLookupResponse response)
         {
             return new InstaUserLookupConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaAudio, InstaAudioResponse> GetAudioConverter(
+            InstaAudioResponse response)
+        {
+            return new InstaAudioConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaVoice, InstaVoiceResponse> GetVoiceConverter(
+            InstaVoiceResponse response)
+        {
+            return new InstaVoiceConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaVoiceMedia, InstaVoiceMediaResponse> GetVoiceMediaConverter(
+            InstaVoiceMediaResponse response)
+        {
+            return new InstaVoiceMediaConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaAnimatedImage, InstaAnimatedImageResponse> GetAnimatedImageConverter(
+            InstaAnimatedImageResponse response)
+        {
+            return new InstaAnimatedImageConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaAnimatedImageMedia, InstaAnimatedImageMediaResponse> GetAnimatedImageMediaConverter(
+            InstaAnimatedImageMediaResponse response)
+        {
+            return new InstaAnimatedImageMediaConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaAnimatedImageUser, InstaAnimatedImageUserResponse> GetAnimatedImageUserConverter(
+            InstaAnimatedImageUserResponse response)
+        {
+            return new InstaAnimatedImageUserConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaPresence, InstaPresenceResponse> GetPresenceConverter(
+            InstaPresenceResponse response)
+        {
+            return new InstaPresenceConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserShortList, InstaBlockedCommentersResponse> GetBlockedCommentersConverter(
+            InstaBlockedCommentersResponse response)
+        {
+            return new InstaBlockedCommentersConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDirectHashtag, InstaDirectHashtagResponse> GetDirectHashtagConverter(
+            InstaDirectHashtagResponse response)
+        {
+            return new InstaDirectHashtagConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDirectBroadcast, InstaDirectBroadcastResponse> GetDirectBroadcastConverter(
+            InstaDirectBroadcastResponse response)
+        {
+            return new InstaDirectBroadcastConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryTalliesItem, InstaStoryTalliesItemResponse> GetStoryTalliesItemConverter(
+            InstaStoryTalliesItemResponse response)
+        {
+            return new InstaStoryTalliesItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuestionStickerItem, InstaStoryQuestionStickerItemResponse> GetStoryQuestionStickerItemConverter(
+            InstaStoryQuestionStickerItemResponse response)
+        {
+            return new InstaStoryQuestionStickerItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryPollStickerItem, InstaStoryPollStickerItemResponse> GetStoryPollStickerItemConverter(
+            InstaStoryPollStickerItemResponse response)
+        {
+            return new InstaStoryPollStickerItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStorySliderStickerItem, InstaStorySliderStickerItemResponse> GetStorySliderStickerItemConverter(
+           InstaStorySliderStickerItemResponse response)
+        {
+            return new InstaStorySliderStickerItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuestionItem, InstaStoryQuestionItemResponse> GetStoryQuestionItemConverter(
+            InstaStoryQuestionItemResponse response)
+        {
+            return new InstaStoryQuestionItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryPollItem, InstaStoryPollItemResponse> GetStoryPollItemConverter(
+            InstaStoryPollItemResponse response)
+        {
+            return new InstaStoryPollItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStorySliderItem, InstaStorySliderItemResponse> GetStorySliderItemConverter(
+            InstaStorySliderItemResponse response)
+        {
+            return new InstaStorySliderItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryVoterItem, InstaStoryVoterItemResponse> GetStoryPollVoterItemConverter(
+            InstaStoryVoterItemResponse response)
+        {
+            return new InstaStoryPollVoterItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryPollVoterInfoItem, InstaStoryPollVoterInfoItemResponse> GetStoryPollVoterInfoItemConverter(
+            InstaStoryPollVoterInfoItemResponse response)
+        {
+            return new InstaStoryPollVoterInfoItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaReelStoryMediaViewers, InstaReelStoryMediaViewersResponse> GetReelStoryMediaViewersConverter(
+            InstaReelStoryMediaViewersResponse response)
+        {
+            return new InstaReelStoryMediaViewersConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryPollVotersList, InstaStoryPollVotersListResponse> GetStoryPollVotersListConverter(
+            InstaStoryPollVotersListResponse response)
+        {
+            return new InstaStoryPollVotersListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStorySliderVoterInfoItem, InstaStorySliderVoterInfoItemResponse> GetStorySliderVoterInfoItemConverter(
+            InstaStorySliderVoterInfoItemResponse response)
+        {
+            return new InstaStorySliderVoterInfoItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaFriendshipFullStatus, InstaFriendshipFullStatusResponse> GetFriendshipFullStatusConverter(
+            InstaFriendshipFullStatusResponse response)
+        {
+            return new InstaFriendshipFullStatusConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaUserShortFriendshipFull, InstaUserShortFriendshipFullResponse> GetUserShortFriendshipFullConverter(
+            InstaUserShortFriendshipFullResponse response)
+        {
+            return new InstaUserShortFriendshipFullConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcast, InstaBroadcastResponse> GetBroadcastConverter(
+            InstaBroadcastResponse response)
+        {
+            return new InstaBroadcastConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastAddToPostLive, InstaBroadcastAddToPostLiveResponse> GetAddToPostLiveConverter(
+            InstaBroadcastAddToPostLiveResponse response)
+        {
+            return new InstaBroadcastAddToPostLiveConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastCommentEnableDisable, InstaBroadcastCommentEnableDisableResponse> GetBroadcastCommentEnableDisableConverter(
+            InstaBroadcastCommentEnableDisableResponse response)
+        {
+            return new InstaBroadcastCommentEnableDisableConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastCreate, InstaBroadcastCreateResponse> GetBroadcastCreateConverter(
+            InstaBroadcastCreateResponse response)
+        {
+            return new InstaBroadcastCreateConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastLike, InstaBroadcastLikeResponse> GetBroadcastLikeConverter(
+            InstaBroadcastLikeResponse response)
+        {
+            return new InstaBroadcastLikeConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastInfo, InstaBroadcastInfoResponse> GetBroadcastInfoConverter(
+            InstaBroadcastInfoResponse response)
+        {
+            return new InstaBroadcastInfoConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastLiveHeartBeatViewerCount, InstaBroadcastLiveHeartBeatViewerCountResponse> GetBroadcastLiveHeartBeatViewerCountConverter(
+            InstaBroadcastLiveHeartBeatViewerCountResponse response)
+        {
+            return new InstaBroadcastLiveHeartBeatViewerCountConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastNotifyFriends, InstaBroadcastNotifyFriendsResponse> GetBroadcastNotifyFriendsConverter(
+            InstaBroadcastNotifyFriendsResponse response)
+        {
+            return new InstaBroadcastNotifyFriendsConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastStart, InstaBroadcastStartResponse> GetBroadcastStartConverter(
+            InstaBroadcastStartResponse response)
+        {
+            return new InstaBroadcastStartConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastPinUnpin, InstaBroadcastPinUnpinResponse> GetBroadcastPinUnpinConverter(
+            InstaBroadcastPinUnpinResponse response)
+        {
+            return new InstaBroadcastPinUnpinConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastStatusItem, InstaBroadcastStatusItemResponse> GetBroadcastStatusItemConverter(
+            InstaBroadcastStatusItemResponse response)
+        {
+            return new InstaBroadcastStatusItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastTopLiveStatusList, InstaBroadcastTopLiveStatusResponse> GetBroadcastTopLiveStatusListConverter(
+            InstaBroadcastTopLiveStatusResponse response)
+        {
+            return new InstaBroadcastTopLiveStatusListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastList, List<InstaBroadcastResponse>> GetBroadcastListConverter(
+            List<InstaBroadcastResponse> response)
+        {
+            return new InstaBroadcastListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastSendComment, InstaBroadcastSendCommentResponse> GetBroadcastSendCommentConverter(
+            InstaBroadcastSendCommentResponse response)
+        {
+            return new InstaBroadcastSendCommentConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastComment, InstaBroadcastCommentResponse> GetBroadcastCommentConverter(
+            InstaBroadcastCommentResponse response)
+        {
+            return new InstaBroadcastCommentConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastCommentList, InstaBroadcastCommentListResponse> GetBroadcastCommentListConverter(
+            InstaBroadcastCommentListResponse response)
+        {
+            return new InstaBroadcastCommentListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaBroadcastPostLive, InstaBroadcastPostLiveResponse> GetBroadcastPostLiveConverter(
+            InstaBroadcastPostLiveResponse response)
+        {
+            return new InstaBroadcastPostLiveConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDiscoverTopLive, InstaDiscoverTopLiveResponse> GetDiscoverTopLiveConverter(
+            InstaDiscoverTopLiveResponse response)
+        {
+            return new InstaDiscoverTopLiveConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryFriendshipStatus, InstaStoryFriendshipStatusResponse> GetStoryFriendshipStatusConverter(
+            InstaStoryFriendshipStatusResponse response)
+        {
+            return new InstaStoryFriendshipStatusConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryFriendshipStatusShort, InstaStoryFriendshipStatusShortResponse> GetStoryFriendshipStatusShortConverter(
+            InstaStoryFriendshipStatusShortResponse response)
+        {
+            return new InstaStoryFriendshipStatusShortConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaPrimaryCountryInfo, InstaPrimaryCountryInfoResponse> GetPrimaryCountryInfoConverter(
+            InstaPrimaryCountryInfoResponse response)
+        {
+            return new InstaPrimaryCountryInfoConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaAdsInfo, InstaAdsInfoResponse> GetAdsInfoConverter(
+            InstaAdsInfoResponse response)
+        {
+            return new InstaAdsInfoConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaAccountDetails, InstaAccountDetailsResponse> GetAccountDetailsConverter(
+            InstaAccountDetailsResponse response)
+        {
+            return new InstaAccountDetailsConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuestionResponder, InstaStoryQuestionResponderResponse> GetStoryQuestionResponderConverter(
+            InstaStoryQuestionResponderResponse response)
+        {
+            return new InstaStoryQuestionResponderConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuestionInfo, InstaStoryQuestionInfoResponse> GetStoryQuestionInfoConverter(
+            InstaStoryQuestionInfoResponse response)
+        {
+            return new InstaStoryQuestionInfoConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryCountdownStickerItem, InstaStoryCountdownStickerItemResponse> GetStoryCountdownStickerItemConverter(
+            InstaStoryCountdownStickerItemResponse response)
+        {
+            return new InstaStoryCountdownStickerItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryCountdownItem, InstaStoryCountdownItemResponse> GetStoryCountdownItemConverter(
+            InstaStoryCountdownItemResponse response)
+        {
+            return new InstaStoryCountdownItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaVisualMedia, InstaVisualMediaResponse> GetVisualMediaConverter(
+            InstaVisualMediaResponse response)
+        {
+            return new InstaVisualMediaConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaVisualMediaContainer, InstaVisualMediaContainerResponse> GetVisualMediaContainerConverter(
+            InstaVisualMediaContainerResponse response)
+        {
+            return new InstaVisualMediaContainerConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaWebAccountInfo, InstaWebSettingsPageResponse> GetWebAccountInfoConverter(
+            InstaWebSettingsPageResponse response)
+        {
+            return new InstaWebAccountInfoConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaWebTextData, InstaWebSettingsPageResponse> GetWebTextDataListConverter(
+            InstaWebSettingsPageResponse response)
+        {
+            return new InstaWebTextDataConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaWebDataItem, InstaWebDataItemResponse> GetWebDataItemConverter(
+            InstaWebDataItemResponse response)
+        {
+            return new InstaWebDataItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaWebData, InstaWebSettingsPageResponse> GetWebDataConverter(
+            InstaWebSettingsPageResponse response)
+        {
+            return new InstaWebDataConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryLocation, InstaStoryLocationResponse> GetStoryLocationConverter(
+            InstaStoryLocationResponse response)
+        {
+            return new InstaStoryLocationConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryCountdownList, InstaStoryCountdownListResponse> GetStoryCountdownListConverter(
+            InstaStoryCountdownListResponse response)
+        {
+            return new InstaStoryCountdownListConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaRelatedHashtag, InstaRelatedHashtagResponse> GetRelatedHashtagConverter(
+            InstaRelatedHashtagResponse response)
+        {
+            return new InstaRelatedHashtagConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTopicalExploreCluster, InstaTopicalExploreClusterResponse> GetExploreClusterConverter(
+            InstaTopicalExploreClusterResponse response)
+        {
+            return new InstaTopicalExploreClusterConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTopicalExploreFeed, InstaTopicalExploreFeedResponse> GetTopicalExploreFeedConverter(
+            InstaTopicalExploreFeedResponse response)
+        {
+            return new InstaTopicalExploreFeedConverter { SourceObject = response };
         }
     }
 }

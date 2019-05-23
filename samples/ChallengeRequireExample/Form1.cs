@@ -38,7 +38,21 @@ namespace ChallengeRequireExample
 {
     public partial class Form1 : Form
     {
-        // Note: the old challenge require function is not supported anymore.
+        // There are two different type of challenge is exists!
+        //  - 1. You receive challenge while you already logged in:
+        //       "This is me" or "This is not me" option!
+        //       If some suspecious login happend, this will promp up, and you should accept it to get rid of it
+        //
+        //       Use Task<IResult<InstaLoggedInChallengeDataInfo>> GetLoggedInChallengeDataInfoAsync() to get information like coordinate of
+        //       login request and more data info
+        //
+        //       Use Task<IResult<bool>> AcceptChallengeAsync() to accept that you are the ONE that requests for login!
+
+
+
+
+        //  - 2. You receive challenge while you calling LoginAsync
+
         // Note: new challenge require functions is very easy to use.
         // there are 5 functions I've added to IInstaApi for challenge require (checkpoint_endpoint)
 
@@ -360,31 +374,91 @@ namespace ChallengeRequireExample
                 MessageBox.Show("Login first.");
                 return;
             }
-            var x = await InstaApi.FeedProcessor.GetExploreFeedAsync(PaginationParameters.MaxPagesToLoad(1));
 
-            if (x.Succeeded)
+            var topicalExplore = await InstaApi.FeedProcessor.GetTopicalExploreFeedAsync(PaginationParameters.MaxPagesToLoad(1));
+
+            if (topicalExplore.Succeeded == false)
+            {
+                if (topicalExplore.Info.ResponseType == ResponseType.ChallengeRequired)
+                {
+                    var challengeData = await InstaApi.GetLoggedInChallengeDataInfoAsync();
+                    // Do something to challenge data, if you want!
+
+                    var acceptChallenge = await InstaApi.AcceptChallengeAsync();
+                    // If Succeeded was TRUE, you can continue to your work!
+                }
+            }
+            else
             {
                 StringBuilder sb = new StringBuilder();
                 StringBuilder sb2 = new StringBuilder();
                 sb2.AppendLine("Like 5 Media>");
-                foreach (var item in x.Value.Medias.Take(5))
+                foreach (var item in topicalExplore.Value.Medias.Take(5))
                 {
                     // like media...
                     var liked = await InstaApi.MediaProcessor.LikeMediaAsync(item.InstaIdentifier);
                     sb2.AppendLine($"{item.InstaIdentifier} liked? {liked.Succeeded}");
                 }
 
-                sb.AppendLine("Explore Feeds Result: " + x.Succeeded);
-                foreach (var media in x.Value.Medias)
-                {
+                sb.AppendLine("Explore categories: " + topicalExplore.Value.Clusters.Count);
+                int ix = 1;
+                foreach (var cluster in topicalExplore.Value.Clusters)
+                    sb.AppendLine($"#{ix++} {cluster.Name}");
+
+                sb.AppendLine();
+                sb.AppendLine();
+                sb.AppendLine("Explore tv channels: " + topicalExplore.Value.TVChannels.Count);
+                sb.AppendLine();
+                sb.AppendLine();
+
+                sb.AppendLine("Explore Feeds Result: " + topicalExplore.Succeeded);
+                foreach (var media in topicalExplore.Value.Medias)
                     sb.AppendLine(DebugUtils.PrintMedia("Feed media", media));
-                }
+
                 RtBox.Text = sb2.ToString() + Environment.NewLine + Environment.NewLine + Environment.NewLine;
 
                 RtBox.Text += sb.ToString();
                 RtBox.Visible = true;
                 Size = ChallengeSize;
             }
+
+
+            //// old explore page
+            //var x = await InstaApi.FeedProcessor.GetExploreFeedAsync(PaginationParameters.MaxPagesToLoad(1));
+            //if (x.Succeeded == false)
+            //{
+            //    if (x.Info.ResponseType == ResponseType.ChallengeRequired)
+            //    {
+            //        var challengeData = await InstaApi.GetLoggedInChallengeDataInfoAsync();
+            //        // Do something to challenge data, if you want!
+
+            //        var acceptChallenge = await InstaApi.AcceptChallengeAsync();
+            //        // If Succeeded was TRUE, you can continue to your work!
+            //    }
+            //}
+            //else
+            //{
+            //    StringBuilder sb = new StringBuilder();
+            //    StringBuilder sb2 = new StringBuilder();
+            //    sb2.AppendLine("Like 5 Media>");
+            //    foreach (var item in x.Value.Medias.Take(5))
+            //    {
+            //        // like media...
+            //        var liked = await InstaApi.MediaProcessor.LikeMediaAsync(item.InstaIdentifier);
+            //        sb2.AppendLine($"{item.InstaIdentifier} liked? {liked.Succeeded}");
+            //    }
+
+            //    sb.AppendLine("Explore Feeds Result: " + x.Succeeded);
+            //    foreach (var media in x.Value.Medias)
+            //    {
+            //        sb.AppendLine(DebugUtils.PrintMedia("Feed media", media));
+            //    }
+            //    RtBox.Text = sb2.ToString() + Environment.NewLine + Environment.NewLine + Environment.NewLine;
+
+            //    RtBox.Text += sb.ToString();
+            //    RtBox.Visible = true;
+            //    Size = ChallengeSize;
+            //}
         }
 
         void LoadSession()

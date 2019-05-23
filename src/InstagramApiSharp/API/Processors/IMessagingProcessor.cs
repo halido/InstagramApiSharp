@@ -171,6 +171,34 @@ namespace InstagramApiSharp.API.Processors
        InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
 
         /// <summary>
+        ///     Send hashtag to direct thread
+        /// </summary>
+        /// <param name="text">Text to send</param>
+        /// <param name="hashtag">Hashtag to send</param>
+        /// <param name="threadIds">Thread ids</param>
+        /// <returns>Returns True if hashtag sent</returns>
+        Task<IResult<bool>> SendDirectHashtagAsync(string text, string hashtag, params string[] threadIds);
+
+        /// <summary>
+        ///     Send hashtag to direct thread
+        /// </summary>
+        /// <param name="text">Text to send</param>
+        /// <param name="hashtag">Hashtag to send</param>
+        /// <param name="threadIds">Thread ids</param>
+        /// <param name="recipients">Recipients ids</param>
+        /// <returns>Returns True if hashtag sent</returns>
+        Task<IResult<bool>> SendDirectHashtagAsync(string text, string hashtag, string[] threadIds, string[] recipients);
+
+        /// <summary>
+        ///     Send hashtag to direct thread
+        /// </summary>
+        /// <param name="text">Text to send</param>
+        /// <param name="hashtag">Hashtag to send</param>
+        /// <param name="recipients">Recipients ids</param>
+        /// <returns>Returns True if hashtag sent</returns>
+        Task<IResult<bool>> SendDirectHashtagToRecipientsAsync(string text, string hashtag, params string[] recipients);
+
+        /// <summary>
         ///     Send link address to direct thread
         /// </summary>
         /// <param name="text">Text to send</param>
@@ -178,6 +206,25 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadIds">Thread ids</param>
         /// <returns>Returns True if link sent</returns>
         Task<IResult<bool>> SendDirectLinkAsync(string text, string link, params string[] threadIds);
+        
+        /// <summary>
+        ///     Send link address to direct thread
+        /// </summary>
+        /// <param name="text">Text to send</param>
+        /// <param name="link">Link to send (only one link will approved)</param>
+        /// <param name="threadIds">Thread ids</param>
+        /// <param name="recipients">Recipients ids</param>
+        /// <returns>Returns True if link sent</returns>
+        Task<IResult<bool>> SendDirectLinkAsync(string text, string link, string[] threadIds, string[] recipients);
+
+        /// <summary>
+        ///     Send link address to direct thread
+        /// </summary>
+        /// <param name="text">Text to send</param>
+        /// <param name="link">Link to send (only one link will approved)</param>
+        /// <param name="recipients">Recipients ids</param>
+        /// <returns>Returns True if link sent</returns>
+        Task<IResult<bool>> SendDirectLinkToRecipientsAsync(string text, string link, params string[] recipients);
 
         /// <summary>
         ///     Send location to direct thread
@@ -228,6 +275,13 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadIds">Thread ids</param>
         /// <returns>Returns True if profile sent</returns>
         Task<IResult<bool>> SendDirectProfileAsync(long userIdToSend, params string[] threadIds);
+
+        /// <summary>
+        ///     Send profile to direct thrad
+        /// </summary>
+        /// <param name="userIdToSend">User id to send</param>
+        /// <param name="recipients">Recipients (user ids/pk)</param>
+        Task<IResult<bool>> SendDirectProfileToRecipientsAsync(long userIdToSend, string recipients);
 
         /// <summary>
         ///     Send direct text message to provided users and threads
@@ -313,5 +367,11 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadId">Thread id</param>
         /// <param name="title">New title</param>
         Task<IResult<bool>> UpdateDirectThreadTitleAsync(string threadId, string title);
+        
+        /// <summary>
+        ///     Send a like to the conversation
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        Task<IResult<bool>> SendDirectLikeAsync(string threadId);
     }
 }
