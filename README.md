@@ -4,14 +4,23 @@ A complete Private Instagram API for .NET (C#, VB.NET).
 Supports almost every features that Instagram app has!
 
 -----
-# Public project is not maintained anymore. [#233](https://github.com/ramtinak/InstagramApiSharp/issues/233)
-# Project will continue to support with subscriptions as an Private project [#243](https://github.com/ramtinak/InstagramApiSharp/issues/243) and check [#244](https://github.com/ramtinak/InstagramApiSharp/issues/244) for changelogs.
+InstagramApiSharp's private version - Under developing. Check [#243](https://github.com/ramtinak/InstagramApiSharp/issues/243)
+
+| Target | Branch | Version | Changelog |
+| ------ | ------ | ------ | ------ |
+| Github | master | v2.0.9 | [v2.0.9](https://github.com/ramtinak/InstagramApiSharp/issues/244#issuecomment-514009358) |
+
 
 -----
+InstagramApiSharp's public version - Update date: April 5, 2019 - End Of Support!!!
+
 | Target | Branch | Version | Download link | Total downloads |
 | ------ | ------ | ------ | ------ | ------ |
-| Nuget | master | v1.4.0.0 | [![NuGet](https://img.shields.io/nuget/v/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) | [![NuGet downloads](https://img.shields.io/nuget/dt/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) |
-| Release | master | v1.4.0.0 | [![Release](http://s9.picofile.com/file/8353468992/releases.PNG)](https://github.com/ramtinak/InstagramApiSharp/releases/latest) | |
+| Nuget | master | v1.4.0.1 | [![NuGet](https://img.shields.io/nuget/v/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) | [![NuGet downloads](https://img.shields.io/nuget/dt/InstagramApiSharp.svg)](https://www.nuget.org/packages/InstagramApiSharp) |
+| Release | master | v1.4.0.1 | [![Release](http://s9.picofile.com/file/8353468992/releases.PNG)](https://github.com/ramtinak/InstagramApiSharp/releases/latest) | |
+
+## WARNING!!!
+Use [InstagramApiSharp](https://github.com/ramtinak/InstagramApiSharp/)'s free versions at your own risk! I'm not responsible for free versions anymore!!!!
 
 ## IMPORTANT NOTE:
 `PaginationParameters` updated, you must use `NextMaxId` instead of using old `NextId`!!!!!
@@ -97,6 +106,9 @@ Task<IResult<object>>
 Check [Wiki pages](https://github.com/ramtinak/InstagramApiSharp/wiki) for documentation.
 
 ## Version changes
+v1.4.0.1
+- Change license to MIT
+
 v1.4.0.0
 - [Add] GetTopicalExploreFeedAsync to FeedProcessor (new explore page)
 	Supports explore categories, ig tv videos
@@ -166,7 +178,7 @@ You can ask questions or report issues in Persian or English language.
 I can't answer to other languages, because I don't understand them.
 
 ## License
-Do whatever you want to do! Except changing library name!!!!
+MIT.
 
 ## Terms and conditions
 - Use this Api at your own risk.
@@ -175,7 +187,18 @@ Do whatever you want to do! Except changing library name!!!!
 Feel free to contribute and submit pull requests.
 
 ## Thanks
-Special thanks to [all contributors](https://github.com/ramtinak/InstagramApiSharp/graphs/contributors).
+
+[estgold](https://github.com/estgold) for contribution
+
+[ADeltaX](https://github.com/ADeltaX) for contribution
+
+[vitalragaz](https://github.com/vitalragaz) for contribution
+
+[n0ise9914](https://github.com/n0ise9914) for contribution
+
+Special thanks to [all other contributors](https://github.com/ramtinak/InstagramApiSharp/graphs/contributors).
+
+Special thanks to [all other InstaSharper contributors](https://github.com/a-legotin/InstaSharper/graphs/contributors).
 
 Special thanks to [mgp25](https://github.com/mgp25) and his [php wrapper](https://github.com/mgp25/Instagram-API/).
 
@@ -183,6 +206,13 @@ Special thanks to [mgp25](https://github.com/mgp25) and his [php wrapper](https:
 This code is in no way affiliated with, authorized, maintained, sponsored or endorsed by Instagram or any of its affiliates or subsidiaries. This is an independent and unofficial API wrapper.
 
 ## Developers
+Private version
+
+| Name | Github | Email | Telegram |
+| ------ | ------ | ------ | ------ |
+| Ramtin Jokar | [@Ramtinak](https://github.com/ramtinak) | [Ramtinak@live.com](mailto:ramtinak@live.com) | https://t.me/ramtinak |
+
+Public version - End Of Support
 
 | Name | Github | Email | Telegram | Instagram |
 | ------ | ------ | ------ | ------ | ------ |
